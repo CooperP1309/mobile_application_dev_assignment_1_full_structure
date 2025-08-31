@@ -97,7 +97,8 @@ public class DishesFragment extends Fragment {
         binding.buttonFinalAddDish.setOnClickListener(v->{
 
             // extract all variables from form
-            int dishId = Integer.parseInt(binding.editAddDishID.getText().toString());
+            String dishIdStr = binding.editAddDishID.getText().toString();
+            //int dishId = Integer.parseInt(binding.editAddDishID.getText().toString());
             String dishName = binding.editAddDishName.getText().toString();
             int selectedDishTypeId = binding.radioAddDishType.getCheckedRadioButtonId();
             String ingredients = binding.editAddIndgredients.getText().toString();
@@ -106,12 +107,14 @@ public class DishesFragment extends Fragment {
             Bitmap image = null;
 
             // error check variables (empty and dupe ID)
-            if (!checkIdUnique(dishId)) {       // case for bad ID input
-                binding.textAddErrorResponse.setText("Dish ID already exists!");
+            if (dishIdStr.isEmpty() || dishName.isEmpty() || selectedDishTypeId == -1
+                    || ingredients.isEmpty() || priceStr.isEmpty()) {
+                binding.textAddErrorResponse.setText("One or more fields are empty");
                 return;
             }
-            if (dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
-                binding.textAddErrorResponse.setText("One or more fields are empty");
+            int dishId = Integer.parseInt(dishIdStr);
+            if (!checkIdUnique(dishId)) {       // case for bad ID input
+                binding.textAddErrorResponse.setText("Dish ID already exists!");
                 return;
             }
             try {
@@ -124,6 +127,10 @@ public class DishesFragment extends Fragment {
             // pushing data into DB
             RadioButton selectedButton = binding.radioAddDishType.findViewById(selectedDishTypeId);
             String dishType = selectedButton.getText().toString();
+
+            // dividing ingredients with a non-comma character
+            // commas are used by SQL to divide columns/fields
+            ingredients = ingredients.replace(',', '|');
 
             Dish newDish = new Dish(dishId, dishName, dishType, ingredients, price, image);
             databaseManager.addRow(newDish);
@@ -143,30 +150,54 @@ public class DishesFragment extends Fragment {
         binding.recyclerUpdate.setAdapter(updateAdapter);
         binding.recyclerUpdate.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
-        // detect when a recycler view is selected and set its data to form fields
+        // when a recycler view row is selected...
         updateAdapter.setOnSelectionChangedListener(hasSelected -> {
+
+            // push that row into a dish object
             String selectedRow = updateAdapter.getSelected().toString();
+            Dish selectedDish = new Dish(selectedRow);
 
-
+            // set the field of the update form to reflect the properties of the dish object
+            setUpdateFormFields(selectedDish);
         });
 
 
         binding.buttonSelectedUpdateDish.setOnClickListener(v->{
 
-            // get selected rows string
+            // get selected row string
             String selectedRow = updateAdapter.getSelected().toString();
 
-            // convert to a dish object
-            Dish dish = new Dish(selectedRow);
+            // extract all variables from form
+            Dish selectedDish = new Dish(selectedRow);      // lazy way to get dishID
+            String dishName = binding.editUpdateDishName.getText().toString();
+            int selectedDishTypeId = binding.radioUpdateDishType.getCheckedRadioButtonId();
+            String ingredients = binding.editUpdateIndgredients.getText().toString();
+            String priceStr = binding.editUpdatePrice.getText().toString();
+            double price;
+            Bitmap image = null;
 
-            // update the dish using form fields
-            dish.setDishName("Pork Ribs");
-            dish.setDishType("BBQ");
-            dish.setPrice(43.00);
-            dish.setIngredients("Pork");
+            // error check variables
+            if (dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
+                binding.textAddErrorResponse.setText("One or more fields are empty");
+                return;
+            }
+            try {
+                price = Double.parseDouble(priceStr);
+            } catch (Exception e) {
+                binding.textUpdateErrorResponse.setText("Invalid price given");
+                return;
+            }
 
-            databaseManager.updateRow(dish);
+            // pushing data into DB
+            RadioButton selectedButton = binding.radioUpdateDishType.findViewById(selectedDishTypeId);
+            String dishType = selectedButton.getText().toString();
 
+            // dividing ingredients with a non-comma character
+            // commas are used by SQL to divide columns/fields
+            ingredients = ingredients.replace(',', '|');
+
+            Dish newDish = new Dish(selectedDish.getDishID(), dishName, dishType, ingredients, price, image);
+            databaseManager.updateRow(newDish);
             reloadFragment();
         });
     }
@@ -267,17 +298,49 @@ public class DishesFragment extends Fragment {
         return true;
     }
 
-    // TODO DELETE THIS AFTER TESTING
-    private String testDishProperties(Dish dish) {
-        String properties = "";
+    private void setUpdateFormFields(Dish dish) {
 
-        properties = properties + Integer.toString(dish.getDishID());
-        properties = properties + dish.getDishName();
-        properties = properties + dish.getDishType();
-        properties = properties + dish.getIngredients();
-        properties = properties + dish.getPrice().toString();
-        properties = properties + null;
+        binding.editUpdateDishName.setText(dish.getDishName());
 
-        return properties;
+        Log.d("DEBUG", "dish type = '" + dish.getDishType() + "'");
+
+
+        switch (dish.getDishType()) {
+            case " Entry":
+                binding.radioUpdateDishType.check(R.id.radioUpdateEntry);
+                break;
+            case " Main":
+                binding.radioUpdateDishType.check(R.id.radioUpdateMain);
+                break;
+            case " Drink":
+                binding.radioUpdateDishType.check(R.id.radioUpdateDrink);
+                break;
+        }
+
+        binding.editUpdateIndgredients.setText(dish.getIngredients());
+        binding.editUpdatePrice.setText(Double.toString(dish.getPrice()));
     }
 }
+
+
+
+
+
+
+
+
+/*
+
+private String testDishProperties(Dish dish) {
+    String properties = "";
+
+    properties = properties + Integer.toString(dish.getDishID());
+    properties = properties + dish.getDishName();
+    properties = properties + dish.getDishType();
+    properties = properties + dish.getIngredients();
+    properties = properties + dish.getPrice().toString();
+    properties = properties + null;
+
+    return properties;
+}
+ */
