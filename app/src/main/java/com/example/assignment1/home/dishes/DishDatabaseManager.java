@@ -16,7 +16,7 @@ public class DishDatabaseManager {
 
     // sql string query to create a table with 3 columns
     private static final String CREATE_TABLE = "CREATE TABLE " + DB_TABLE
-            + " (DishID INTEGER PRIMARY KEY AUTOINCREMENT, DishName TEXT NOT NULL, DishType TEXT NOT NULL," +
+            + " (DishID INTEGER PRIMARY KEY, DishName TEXT NOT NULL, DishType TEXT NOT NULL," +
             " Ingredients TEXT NOT NULL, Price REAL NOT NULL, Image BLOB);";
 
     // declaring of DB manager objects
@@ -77,6 +77,7 @@ public class DishDatabaseManager {
         byte[] image = new byte[0];
 
         ContentValues newDish = new ContentValues();
+        newDish.put("DishID", dish.getDishID());
         newDish.put("DishName", dish.getDishName());
         newDish.put("DishType", dish.getDishType());
         newDish.put("Ingredients", dish.getIngredients());

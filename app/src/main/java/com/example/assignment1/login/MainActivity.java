@@ -42,7 +42,14 @@ public class MainActivity extends AppCompatActivity {
 
         // inject context into authenticator/login class
         authenticator = new Authenticator(this);
-
+/*
+        String password = "123";
+        authenticator.addRow("mary",password,1);
+        authenticator.addRow("john",password,2);
+        authenticator.addRow("james",password,2);
+        authenticator.addRow("owen",password,1);
+        binding.textPrint.setText("Inserted records");
+*/
         // login button - onClickListener wrapper method
         tryLogin();
     }

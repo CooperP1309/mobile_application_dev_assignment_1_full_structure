@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RadioButton;
 
 import com.example.assignment1.R;
 import com.example.assignment1.databinding.FragmentDishesBinding;
@@ -42,38 +43,19 @@ public class DishesFragment extends Fragment {
         // requireContext(): throws except if no activity is attached to fragment - safe handling
         databaseManager = new DishDatabaseManager(requireContext());
 
+        // initialize the data in recycler view
         retrieveDishes();
+
+        // add dish Form button handling
+        binding.buttonAdd.setOnClickListener(v->{
+            addDishForm();
+        });
 
         // show update Form button handling
         binding.buttonShowUpdate.setOnClickListener(v->{
             updateForm();
         });
 
-        // EXAMPLE RECORD ADDER!!
-        binding.buttonAdd.setOnClickListener(v->{
-            addDishForm();
-
-            /*
-            String dName, dType, dIngredients;
-            Double dPrice;
-            Bitmap dImage;
-            dName = "Sashimi";
-            dType = "Seafood";
-            dIngredients = "Fish|Rice";
-            dPrice = 15.60;
-            dImage = null;
-
-            Dish newDish = new Dish(dName, dType, dIngredients, dPrice, dImage);
-            databaseManager.addRow(newDish);
-            reloadFragment();
-            */
-        });
-/*
-        binding.buttonRetrieve.setOnClickListener(v->{
-            String rows = databaseManager.retrieveRows();
-            binding.textResponse.setText(rows);
-        });
-*/
         // Inflate the layout for this fragment
         return binding.getRoot();
     }
@@ -106,6 +88,89 @@ public class DishesFragment extends Fragment {
         });
     }
 
+    private void addDishForm() {
+        // modify visibilities
+        binding.createForm.setVisibility(View.VISIBLE);
+        binding.manageDishesForm.setVisibility(View.GONE);
+        binding.updateForm.setVisibility(View.GONE);
+
+        binding.buttonFinalAddDish.setOnClickListener(v->{
+
+            // extract all variables from form
+            int dishId = Integer.parseInt(binding.editAddDishID.getText().toString());
+            String dishName = binding.editAddDishName.getText().toString();
+            int selectedDishTypeId = binding.radioAddDishType.getCheckedRadioButtonId();
+            String ingredients = binding.editAddIndgredients.getText().toString();
+            String priceStr = binding.editAddPrice.getText().toString();
+            double price;
+            Bitmap image = null;
+
+            // error check variables (empty and dupe ID)
+            if (!checkIdUnique(dishId)) {       // case for bad ID input
+                binding.textAddErrorResponse.setText("Dish ID already exists!");
+                return;
+            }
+            if (dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
+                binding.textAddErrorResponse.setText("One or more fields are empty");
+                return;
+            }
+            try {
+                price = Double.parseDouble(priceStr);
+            } catch (Exception e) {
+                binding.textAddErrorResponse.setText("Invalid price given");
+                return;
+            }
+
+            // pushing data into DB
+            RadioButton selectedButton = binding.radioAddDishType.findViewById(selectedDishTypeId);
+            String dishType = selectedButton.getText().toString();
+
+            Dish newDish = new Dish(dishId, dishName, dishType, ingredients, price, image);
+            databaseManager.addRow(newDish);
+            reloadFragment();
+        });
+    }
+
+    private void updateForm() {
+        // modifying form visibilities
+        binding.createForm.setVisibility(View.GONE);
+        binding.manageDishesForm.setVisibility(View.GONE);
+        binding.updateForm.setVisibility(View.VISIBLE);
+
+        // inflate recycler adapter
+        UpdateAdapter updateAdapter = new UpdateAdapter(sortModelList());
+        binding.recyclerUpdate.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.recyclerUpdate.setAdapter(updateAdapter);
+        binding.recyclerUpdate.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
+
+        // detect when a recycler view is selected and set its data to form fields
+        updateAdapter.setOnSelectionChangedListener(hasSelected -> {
+            String selectedRow = updateAdapter.getSelected().toString();
+
+
+        });
+
+
+        binding.buttonSelectedUpdateDish.setOnClickListener(v->{
+
+            // get selected rows string
+            String selectedRow = updateAdapter.getSelected().toString();
+
+            // convert to a dish object
+            Dish dish = new Dish(selectedRow);
+
+            // update the dish using form fields
+            dish.setDishName("Pork Ribs");
+            dish.setDishType("BBQ");
+            dish.setPrice(43.00);
+            dish.setIngredients("Pork");
+
+            databaseManager.updateRow(dish);
+
+            reloadFragment();
+        });
+    }
+
     private void deleteDishes(String selectedDishes) {
 
         // sort selected dishes into array of strings
@@ -135,47 +200,6 @@ public class DishesFragment extends Fragment {
         reloadFragment();
     }
 
-    private void updateForm() {
-        // modifying form visibilities
-        binding.createForm.setVisibility(View.GONE);
-        binding.manageDishesForm.setVisibility(View.GONE);
-        binding.updateForm.setVisibility(View.VISIBLE);
-
-        // inflate recycler adapter
-        UpdateAdapter updateAdapter = new UpdateAdapter(sortModelList());
-        binding.recyclerUpdate.setLayoutManager(new LinearLayoutManager(requireContext()));
-        binding.recyclerUpdate.setAdapter(updateAdapter);
-        binding.recyclerUpdate.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
-
-        binding.buttonSelectedUpdateDish.setOnClickListener(v->{
-
-            // get selected rows string
-            String selectedRow = updateAdapter.getSelected().toString();
-
-            // convert to a dish object
-            Dish dish = new Dish(selectedRow);
-
-            // update the dish using form fields
-            dish.setDishName("Pork Ribs");
-            dish.setDishType("BBQ");
-            dish.setPrice(43.00);
-            dish.setIngredients("Pork");
-
-            databaseManager.updateRow(dish);
-
-            reloadFragment();
-        });
-    }
-
-    private void addDishForm() {
-        // modify visibilities
-        binding.createForm.setVisibility(View.VISIBLE);
-        binding.manageDishesForm.setVisibility(View.GONE);
-        binding.updateForm.setVisibility(View.GONE);
-
-
-    }
-
     private List<Model> sortModelList() {
         List<Model> modelList = new ArrayList<>();
 
@@ -195,6 +219,55 @@ public class DishesFragment extends Fragment {
         return modelList;
     }
 
+    private void reloadFragment() {
+        FragmentManager fm = requireActivity().getSupportFragmentManager();
+
+        fm.beginTransaction()
+                .replace(R.id.frameLayout, new DishesFragment())
+                .addToBackStack(null) // optional
+                .commit();
+    }
+
+    private boolean checkIdUnique(int givenId) {
+
+        // get all rows from database
+        String rows = databaseManager.retrieveRows();
+
+        // sort rows into array
+        String[] lines = rows.split("\\R");
+        List<Integer> idList = new ArrayList<>();
+
+        if (lines[0].isEmpty()) {                       // no records to compare with
+            return true;
+        }
+
+        for (String line : lines) {
+
+            // extract IDs from each row
+            String id = "";
+            for (int i=0; i<line.indexOf('.'); i++) {   // ID end delimited by '.' in db
+                id = id + line.charAt(i);
+            }
+
+            // push ID into int list
+            Log.i("Dish Frag", "Parsing id: " + id);
+            idList.add(Integer.parseInt(id));
+        }
+
+        // compare to given ID
+        for (int i: idList) {
+            if (i == givenId) {
+                Log.i("Dish Frag", "DishID NOT unique: " + i);
+                return false;
+            }
+        }
+
+        Log.i("Dish Frag", "DishID IS unique: " + givenId);
+
+        return true;
+    }
+
+    // TODO DELETE THIS AFTER TESTING
     private String testDishProperties(Dish dish) {
         String properties = "";
 
@@ -206,14 +279,5 @@ public class DishesFragment extends Fragment {
         properties = properties + null;
 
         return properties;
-    }
-
-    private void reloadFragment() {
-        FragmentManager fm = requireActivity().getSupportFragmentManager();
-
-        fm.beginTransaction()
-                .replace(R.id.frameLayout, new DishesFragment())
-                .addToBackStack(null) // optional
-                .commit();
     }
 }

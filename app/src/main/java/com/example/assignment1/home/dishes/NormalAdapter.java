@@ -45,9 +45,9 @@ public class NormalAdapter extends RecyclerView.Adapter<NormalAdapter.MyViewHold
         holder.textView.setText(tempModel.getText());
 
         //on NORMAL click
-        holder.itemView.setOnClickListener(v -> {
-            Toast.makeText(v.getContext(), "position : " + position + " text : " + tempModel.getText(), Toast.LENGTH_SHORT).show();
-        });
+       // holder.itemView.setOnClickListener(v -> {
+       //     Toast.makeText(v.getContext(), "position : " + position + " text : " + tempModel.getText(), Toast.LENGTH_SHORT).show();
+       // });
 
         // on LONG click
         holder.itemView.setOnClickListener(v1 -> {

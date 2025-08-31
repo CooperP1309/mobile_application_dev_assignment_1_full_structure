@@ -31,11 +31,15 @@ public class UpdateAdapter extends RecyclerView.Adapter<UpdateAdapter.MyViewHold
 
     private List<Model> modelList;
     int selectedIndex;
-
+    private NormalAdapter.OnSelectionChangedListener selectionChangedListener;
 
     // constructor injection of the model list
     public UpdateAdapter (List<Model> theModelList){
         modelList = theModelList;
+    }
+
+    public void setOnSelectionChangedListener(NormalAdapter.OnSelectionChangedListener listener) {
+        this.selectionChangedListener = listener;
     }
 
     @NonNull
@@ -82,6 +86,10 @@ public class UpdateAdapter extends RecyclerView.Adapter<UpdateAdapter.MyViewHold
             modelList.get(pos).setSelected(true);
             selectedIndex = pos;    // updating selected pos
             notifyItemChanged(pos); // commiting colour update
+
+            if (selectionChangedListener != null) {
+                selectionChangedListener.onSelectionChanged(hasSelected());
+            }
         });
     }
 
@@ -105,6 +113,16 @@ public class UpdateAdapter extends RecyclerView.Adapter<UpdateAdapter.MyViewHold
         return selectedString;
     }
 
+    public boolean hasSelected() {
+        for (int i=0; i< modelList.size(); i++) {
+            if (modelList.get(i).isSelected()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public List<Integer> getSelectedPositions() {
         List<Integer> selectedPositions = new ArrayList<Integer>();
 
@@ -126,5 +144,9 @@ public class UpdateAdapter extends RecyclerView.Adapter<UpdateAdapter.MyViewHold
 
             this.textView = view.findViewById(R.id.label);
         }
+    }
+
+    public interface OnSelectionChangedListener {
+        void onSelectionChanged(boolean hasSelected);
     }
 }
