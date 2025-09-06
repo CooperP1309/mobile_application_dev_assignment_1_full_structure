@@ -392,7 +392,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="80dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="25dp"
                 android:textStyle="bold"
                 android:textColor="@color/red"
                 app:layout_constraintStart_toStartOf="parent"

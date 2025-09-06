@@ -21,6 +21,7 @@ public class NormalAdapter extends RecyclerView.Adapter<NormalAdapter.MyViewHold
 
     private List<Model> modelList;
     private OnSelectionChangedListener selectionChangedListener;
+    private int selectedPosition = RecyclerView.NO_POSITION;
 
     public void setOnSelectionChangedListener(OnSelectionChangedListener listener) {
         this.selectionChangedListener = listener;
@@ -43,11 +44,6 @@ public class NormalAdapter extends RecyclerView.Adapter<NormalAdapter.MyViewHold
         //assign data to row/holder at a particular position
         Model tempModel = modelList.get(position);
         holder.textView.setText(tempModel.getText());
-
-        //on NORMAL click
-       // holder.itemView.setOnClickListener(v -> {
-       //     Toast.makeText(v.getContext(), "position : " + position + " text : " + tempModel.getText(), Toast.LENGTH_SHORT).show();
-       // });
 
         // on LONG click
         holder.itemView.setOnClickListener(v1 -> {
@@ -73,6 +69,16 @@ public class NormalAdapter extends RecyclerView.Adapter<NormalAdapter.MyViewHold
     public int getItemCount() { //count the number of rows
         //return data.length; // previous implementation
         return modelList.size();
+    }
+
+    // Call this from outside the adapter to select an item
+    public void setSelectedPosition(int position) {
+        int oldPosition = selectedPosition;
+        selectedPosition = position;
+
+        // Refresh old and new so UI updates correctly
+        notifyItemChanged(oldPosition);
+        notifyItemChanged(selectedPosition);
     }
 
     public String getSelected() {

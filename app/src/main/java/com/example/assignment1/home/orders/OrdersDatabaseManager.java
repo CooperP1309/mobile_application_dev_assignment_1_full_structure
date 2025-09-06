@@ -1,4 +1,4 @@
-package com.example.assignment1.home.dishes;
+package com.example.assignment1.home.orders;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,17 +7,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-public class DishDatabaseManager {
-
+public class OrdersDatabaseManager {
     // defining of database metadata
-    public static final String DB_NAME = "System";
-    public static final String DB_TABLE = "Dishes";
+    public static final String DB_NAME = "Outgoing";
+    public static final String DB_TABLE = "Orders";
     public static final int DB_VERSION = 1;
 
     // sql string query to create a table with 3 columns
     private static final String CREATE_TABLE = "CREATE TABLE " + DB_TABLE
-            + " (DishID INTEGER PRIMARY KEY, DishName TEXT NOT NULL, DishType TEXT NOT NULL," +
-            " Ingredients TEXT NOT NULL, Price REAL NOT NULL, Image BLOB);";
+            + " (OrderID INTEGER PRIMARY KEY, DiningOption TEXT NOT NULL, TableNo INTEGER," +
+            " Dishes TEXT NOT NULL, Price REAL NOT NULL);";
 
     // declaring of DB manager objects
     private SQLHelper helper;
@@ -25,18 +24,18 @@ public class DishDatabaseManager {
     private Context context;
 
     // constructor injection of context
-    public DishDatabaseManager(Context theContext) {
+    public OrdersDatabaseManager(Context theContext) {
         context = theContext;
         helper = new SQLHelper(context);
     }
 
-    public DishDatabaseManager openReadable() throws android.database.SQLException {
+    public OrdersDatabaseManager openReadable() throws android.database.SQLException {
         helper = new SQLHelper(context);
         db = helper.getReadableDatabase();          // opening of database in readable mode
         return this;
     }
 
-    public DishDatabaseManager openWritable() throws android.database.SQLException {
+    public OrdersDatabaseManager openWritable() throws android.database.SQLException {
         helper = new SQLHelper(context);
         db = helper.getWritableDatabase();          // opening of database in writable mode
         return this;
@@ -46,36 +45,32 @@ public class DishDatabaseManager {
         helper.close();                             // method to close database helper object
     }
 
-    public void addRow(Dish dish) {
+    public void addRow(Order order) {
         openWritable();
 
-        byte[] image = new byte[0];
+        ContentValues newOrder = new ContentValues();
+        newOrder.put("OrderID", order.getOrderId());
+        newOrder.put("DiningOption", order.getDiningOption());
+        newOrder.put("TableNo", order.getTableNo());
+        newOrder.put("Dishes", order.getDishes());
+        newOrder.put("Price", order.getPrice());
 
-        ContentValues newDish = new ContentValues();
-        newDish.put("DishID", dish.getDishID());
-        newDish.put("DishName", dish.getDishName());
-        newDish.put("DishType", dish.getDishType());
-        newDish.put("Ingredients", dish.getIngredients());
-        newDish.put("Price", dish.getPrice());
-        //newDish.put("Image", BitmapConvert.toByteArr(dish.getBitmap()));
-        newDish.put("Image", image);
         try {
-            db.insertOrThrow(DB_TABLE, null, newDish);
-            Log.i("DishDB", "Inserted new row");
+            db.insertOrThrow(DB_TABLE, null, newOrder);
+            Log.i("OrderDB", "Inserted new row");
         }
         catch (Exception e) {
-            Log.e("Error in inserting rows ", e.toString());
+            Log.e("OrderDB - ERROR", e.toString());
             e.printStackTrace();
         }
 
         close();
     }
 
-
     public String retrieveRows() {
 
         // string array for selecting fields of table
-        String[] columns = new String[] {"DishID", "DishName", "DishType", "Ingredients", "Price","Image"};
+        String[] columns = new String[] {"OrderID", "DiningOption", "TableNo", "Dishes", "Price"};
         openWritable();
 
         // declaring a new cursor object for our database table
@@ -90,8 +85,8 @@ public class DishDatabaseManager {
 
             // append retrieved record details to result string
             tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
-                    + ", " + cursor.getString(2) + ", " + cursor.getString(3)
-                    + ", " + cursor.getDouble(4) + ", " + cursor.getBlob(5) + "\n";
+                    + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
+                    + ", " + cursor.getDouble(4) + "\n";
 
             // iterate to next cursor
             cursor.moveToNext();
@@ -106,65 +101,63 @@ public class DishDatabaseManager {
         return tablerows;
     }
 
-    public void updateRow(Dish dish) {
 
+    public void updateRow(Order order) {
         openWritable();
 
-        byte[] image = new byte[0];
+        ContentValues newOrder = new ContentValues();
+        newOrder.put("OrderID", order.getOrderId());
+        newOrder.put("DiningOption", order.getDiningOption());
+        newOrder.put("TableNo", order.getTableNo());
+        newOrder.put("Dishes", order.getDishes());
+        newOrder.put("Price", order.getPrice());
 
-        ContentValues updatedDish = new ContentValues();
-        updatedDish.put("DishName", dish.getDishName());
-        updatedDish.put("DishType", dish.getDishType());
-        updatedDish.put("Ingredients", dish.getIngredients());
-        updatedDish.put("Price", dish.getPrice());
-        //newDish.put("Image", BitmapConvert.toByteArr(dish.getBitmap()));
-        updatedDish.put("Image", image);
-
-        // preparing selected dish ID for correct type use in SQL statement
-        String[] selectedDish = {Integer.toString(dish.getDishID())};
+        // preparing selected order ID for correct type use in SQL statement
+        String[] selectedOrder = {Integer.toString(order.getOrderId())};
 
         try {
-            db.update(DB_TABLE, updatedDish, "DishID = ?", selectedDish);
+            db.update(DB_TABLE, newOrder, "OrderID = ?", selectedOrder);
             //db.insertOrThrow(DB_TABLE, null, updatedDish);
-            Log.i("DishDB", "Updated row " + selectedDish[0]);
+            Log.i("OrderDB", "Updated row " + selectedOrder[0]);
         }
         catch (Exception e) {
-            Log.e("DishDB", e.toString());
+            Log.e("OrderDB - Error", e.toString());
             e.printStackTrace();
         }
 
         close();
     }
 
-
-    public void deleteRows(int[] dishIDs) {
-        String whereClause = SqlIdUtility.buildWhereClause(dishIDs);
-        String[] whereArgs = SqlIdUtility.buildWhereArgs(dishIDs);
+    public void deleteRows(int[] orderIDs) {
+        String whereClause = SqlIdUtility.buildWhereClause(orderIDs);
+        String[] whereArgs = SqlIdUtility.buildWhereArgs(orderIDs);
 
         openWritable();
 
         int rowsDeleted = db.delete(DB_TABLE, whereClause, whereArgs);
 
-        Log.i("DishDB", "Deleted " + Integer.toString(rowsDeleted) + " rows");
+        Log.i("OrderDB", "Deleted " + Integer.toString(rowsDeleted) + " rows");
 
         close();
     }
 
-    public String retrieveDishname(Integer dishId) {
+    public String retrieveOrder(Integer orderId) {
 
         openReadable();
 
         // preparing selected dish ID for correct type use in SQL statement
-        String[] selectedDish = {dishId.toString()};
+        String[] selectedDish = {orderId.toString()};
 
         // actual querying of the db
-        Cursor cursor = db.query(DB_TABLE, null, "DishID = ?", selectedDish, null, null, null);
+        Cursor cursor = db.query(DB_TABLE, null, "OrderID = ?", selectedDish, null, null, null);
         Log.i("DishDB", "Searched with ID: " + selectedDish[0]);
 
         cursor.moveToFirst();
 
         // append retrieved record detail to result string
-        String retrievedDishName =  cursor.getString(1);
+        String retrievedOrder = cursor.getInt(0) + ". " + cursor.getString(1)
+                        + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
+                        + ", " + cursor.getDouble(4) + "\n";
 
         // closing of cursor
         if (cursor != null && !cursor.isClosed()) {
@@ -173,7 +166,7 @@ public class DishDatabaseManager {
 
         close();
 
-        return retrievedDishName;
+        return retrievedOrder;
     }
 
     public class SQLHelper extends SQLiteOpenHelper {
@@ -194,10 +187,9 @@ public class DishDatabaseManager {
     }
 
     public static class SqlIdUtility {
-
         public static String buildWhereClause(int[] IDs) {
 
-            StringBuilder whereClause = new StringBuilder("DishID IN (");
+            StringBuilder whereClause = new StringBuilder("OrderID IN (");
 
             // a '?' for each ID, whereClasue = "IN (?, ?, ?)"
             for (int i=0; i<IDs.length; i++) {
@@ -208,7 +200,6 @@ public class DishDatabaseManager {
                 }
             }
             whereClause.append(")");
-
             return whereClause.toString();
         }
 
@@ -220,7 +211,6 @@ public class DishDatabaseManager {
             for (int i=0; i< IDs.length; i++) {
                 whereArgs[i] = Integer.toString(IDs[i]);
             }
-
             return whereArgs;
         }
     }
