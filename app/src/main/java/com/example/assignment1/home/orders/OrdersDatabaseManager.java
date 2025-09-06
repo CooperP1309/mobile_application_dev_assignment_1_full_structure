@@ -16,7 +16,7 @@ public class OrdersDatabaseManager {
     // sql string query to create a table with 3 columns
     private static final String CREATE_TABLE = "CREATE TABLE " + DB_TABLE
             + " (OrderID INTEGER PRIMARY KEY, DiningOption TEXT NOT NULL, TableNo INTEGER," +
-            " Dishes TEXT NOT NULL, Price REAL NOT NULL);";
+            " Dishes TEXT NOT NULL, Price REAL NOT NULL, OrderTime DATETIME DEFAULT CURRENT_TIMESTAMP);";
 
     // declaring of DB manager objects
     private SQLHelper helper;
@@ -70,7 +70,7 @@ public class OrdersDatabaseManager {
     public String retrieveRows() {
 
         // string array for selecting fields of table
-        String[] columns = new String[] {"OrderID", "DiningOption", "TableNo", "Dishes", "Price"};
+        String[] columns = new String[] {"OrderID", "DiningOption", "TableNo", "Dishes", "Price", "OrderTime"};
         openWritable();
 
         // declaring a new cursor object for our database table
@@ -86,7 +86,7 @@ public class OrdersDatabaseManager {
             // append retrieved record details to result string
             tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
                     + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
-                    + ", " + cursor.getDouble(4) + "\n";
+                    + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
 
             // iterate to next cursor
             cursor.moveToNext();
@@ -158,6 +158,34 @@ public class OrdersDatabaseManager {
         String retrievedOrder = cursor.getInt(0) + ". " + cursor.getString(1)
                         + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
                         + ", " + cursor.getDouble(4) + "\n";
+
+        // closing of cursor
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        close();
+
+        return retrievedOrder;
+    }
+
+    public String retrieveOrderWithTime(Integer orderId) {
+
+        openReadable();
+
+        // preparing selected dish ID for correct type use in SQL statement
+        String[] selectedDish = {orderId.toString()};
+
+        // actual querying of the db
+        Cursor cursor = db.query(DB_TABLE, null, "OrderID = ?", selectedDish, null, null, null);
+        Log.i("DishDB", "Searched with ID: " + selectedDish[0]);
+
+        cursor.moveToFirst();
+
+        // append retrieved record detail to result string
+        String retrievedOrder = cursor.getInt(0) + ". " + cursor.getString(1)
+                + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
+                + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
 
         // closing of cursor
         if (cursor != null && !cursor.isClosed()) {

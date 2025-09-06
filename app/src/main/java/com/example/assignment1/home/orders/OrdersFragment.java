@@ -26,8 +26,12 @@ import com.example.assignment1.home.dishes.DishesFragment;
 import com.example.assignment1.home.dishes.NormalAdapter;
 import com.example.assignment1.home.dishes.UpdateAdapter;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class OrdersFragment extends Fragment {
 
@@ -79,6 +83,19 @@ public class OrdersFragment extends Fragment {
         binding.recyclerAddDishes.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
 
+        // event trigger - user selects a dish
+        normalAdapter.setOnSelectionChangedListener(hasSelected -> {
+
+            // push that row into a dish object
+            String selectedRows = normalAdapter.getSelected().toString();
+
+            // get total price from the currently selected rows
+            Double price = getTotalPrice(selectedRows);
+
+            // set the price field to reflect this
+            binding.editAddPrice.setText(price.toString());
+        });
+
         // event trigger - user attempts to add order with form details filled
         binding.buttonAddOrder.setOnClickListener(v->{
             // verify user inputs are all valid
@@ -100,8 +117,9 @@ public class OrdersFragment extends Fragment {
     private boolean validateFormData(NormalAdapter dishView) {
         // check for empty fields
         if (binding.editAddOrderID.getText().toString().isEmpty() ||
-                binding.radioAddDiningOption.getCheckedRadioButtonId() == -1) {
-                binding.textCreateErrorResponse.setText("No ID provided");
+                binding.radioAddDiningOption.getCheckedRadioButtonId() == -1 ||
+                binding.editAddPrice.getText().toString().isEmpty()) {
+                binding.textCreateErrorResponse.setText("One or more fields are empty");
                 return false;
         }
 
@@ -118,8 +136,7 @@ public class OrdersFragment extends Fragment {
         }
 
         // if take away selected and table number provided, clear that table number
-        if (binding.radioAddDiningOption.getCheckedRadioButtonId() == R.id.radioTakeAway &&
-                !binding.editAddTableNumber.getText().toString().isEmpty()) {
+        if (binding.radioAddDiningOption.getCheckedRadioButtonId() == R.id.radioTakeAway) {
             binding.editAddTableNumber.setText("0");
         }
 
@@ -177,6 +194,7 @@ public class OrdersFragment extends Fragment {
         // collecting edit text data
         String orderIdStr = binding.editAddOrderID.getText().toString();
         String tableNumberStr = binding.editAddTableNumber.getText().toString();
+        double price = Double.parseDouble(binding.editAddPrice.getText().toString());
 
         // collecting radio button data
         int selectedDiningOption = binding.radioAddDiningOption.getCheckedRadioButtonId();
@@ -185,7 +203,6 @@ public class OrdersFragment extends Fragment {
 
         // collecting recycler view data
         String selectedDishIDs = getIdStrings(dishView.getSelected());
-        double price = getTotalPrice(dishView.getSelected());
 
         return new Order(Integer.parseInt(orderIdStr), Integer.parseInt(tableNumberStr),
                 diningOption, selectedDishIDs, price);
@@ -270,6 +287,19 @@ public class OrdersFragment extends Fragment {
         binding.recyclerUpdateDishes.setAdapter(normalAdapter);
         binding.recyclerUpdateDishes.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
+        // event trigger - user selects a dish
+        normalAdapter.setOnSelectionChangedListener(hasSelected -> {
+
+            // push that row into a dish object
+            String selectedRows = normalAdapter.getSelected().toString();
+
+            // get total price from the currently selected rows
+            Double price = getTotalPrice(selectedRows);
+
+            // set the price field to reflect this
+            binding.editUpdatePrice.setText(price.toString());
+        });
+
         // when a recycler view row is selected...
         orderAdapter.setOnSelectionChangedListener(hasSelected -> {
 
@@ -328,6 +358,8 @@ public class OrdersFragment extends Fragment {
                 binding.editUpdateTableNumber.setText("");
                 break;
         }
+
+        binding.editUpdatePrice.setText(Double.toString(selectedOrder.getPrice()));
     }
 
     private boolean validateUpdateData(NormalAdapter dishView, UpdateAdapter orderView) {
@@ -388,7 +420,7 @@ public class OrdersFragment extends Fragment {
         binding.formCreate.setVisibility(View.GONE);
 
         // inflate recycler adapter
-        NormalAdapter normalAdapter = new NormalAdapter(sortOrderList());
+        OrderAdapter normalAdapter = new OrderAdapter(sortOrderList());
         binding.recyclerSelect.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerSelect.setAdapter(normalAdapter);
         binding.recyclerSelect.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
@@ -396,10 +428,21 @@ public class OrdersFragment extends Fragment {
         // only showing the delete button when at least one order is selected
         normalAdapter.setOnSelectionChangedListener(hasSelected -> {
             if (hasSelected) {
-                binding.buttonDeleteOrder.setVisibility(View.VISIBLE);
+                binding.selectedOnlyView.setVisibility(View.VISIBLE);
+
+                // get record of the most recently selected view from db
+                String mostRecentRecord = orderDbManager.retrieveOrderWithTime(getMostRecentRecordId(normalAdapter));
+
+                // extract the timestamp from this record
+                String timeStamp = extractTimestamp(mostRecentRecord);
+
+                // use the time stamp to get the processing time
+                String processTime = getProcessingTime(timeStamp);
+
+                binding.textProcessingTime.setText(processTime);
             }
             else {
-                binding.buttonDeleteOrder.setVisibility(GONE);
+                binding.selectedOnlyView.setVisibility(GONE);
             }
         });
 
@@ -408,6 +451,67 @@ public class OrdersFragment extends Fragment {
             String selectedOrders = normalAdapter.getSelected().toString();
             deleteOrders(selectedOrders);
         });
+    }
+
+    private int getMostRecentRecordId(OrderAdapter adapter) {
+        String selectedView = adapter.getLastSelectedPositionString();
+
+        // get the ID from the record
+        String idStr = "";
+        for (int i=0; i<selectedView.indexOf(","); i++) {
+            idStr += selectedView.charAt(i);
+        }
+
+        // remove whitespaces
+        idStr = idStr.replaceAll("\\s+", "");
+
+        return Integer.parseInt(idStr);
+    }
+
+    private String extractTimestamp(String selectedRow) {
+        // get starting index of timestamp
+        // get the beginning and end indexes of the time stamp field
+        int currentIndex = 0;
+        for (int i = 0; i < 4; i++) {
+            currentIndex = selectedRow.indexOf(',', currentIndex + 1); // start from last found comma
+        }
+        int startOfTableNo = currentIndex + 1;
+
+        // extract the found number into an int for comparison
+        String timeStampStr = selectedRow.substring(startOfTableNo);
+        timeStampStr = timeStampStr.trim();
+        Log.i("OrdersFrag", "Extracted Time Stamp: '" + timeStampStr
+                    + "' From record: " + selectedRow);
+
+        return timeStampStr;
+    }
+
+    private String getProcessingTime(String timeCreated) {
+        // convert timeCreated into a date data structure
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Date orderDate;
+        try{
+            orderDate = sdf.parse(timeCreated);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+        // get the current time
+        long now = System.currentTimeMillis();
+
+        // get the time passed in milli seconds
+        long difference = now - orderDate.getTime();
+
+        // get the total seconds that have passed
+        long seconds = difference / 1000;
+
+        // get the total minutes from the total seconds
+        long minutes = seconds / 60;
+
+        // finally, get the remainder in seconds
+        seconds = seconds % 60;
+
+        return "Processing Time: " + (minutes-600) + " mins and " + seconds + " secs ago";
     }
 
     private void deleteOrders(String selectedOrders) {

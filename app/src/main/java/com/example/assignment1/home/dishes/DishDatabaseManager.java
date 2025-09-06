@@ -79,7 +79,7 @@ public class DishDatabaseManager {
         openWritable();
 
         // declaring a new cursor object for our database table
-        Cursor cursor = db.query(DB_TABLE, columns, null, null, null, null, null);
+        Cursor cursor = db.query(DB_TABLE, columns, null, null, null, null, "DishType");
         String tablerows = "";
 
         // moving cursor to the first record on table
