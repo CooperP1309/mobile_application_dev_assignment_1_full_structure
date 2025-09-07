@@ -242,6 +242,32 @@ public class DishDatabaseManager {
         return imageUri;
     }
 
+    public String retrieveDishType(Integer dishId) {
+
+        openReadable();
+
+        // preparing selected dish ID for correct type use in SQL statement
+        String[] selectedDish = {dishId.toString()};
+
+        // actual querying of the db
+        Cursor cursor = db.query(DB_TABLE, null, "DishID = ?", selectedDish, null, null, null);
+        Log.i("DishDB", "Searched with ID: " + selectedDish[0]);
+
+        cursor.moveToFirst();
+
+        // append retrieved record detail to result string
+        String dishType =  cursor.getString(2);
+
+        // closing of cursor
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        close();
+
+        return dishType;
+    }
+
     public class SQLHelper extends SQLiteOpenHelper {
         public SQLHelper (Context c) {
             super(c, DB_NAME, null, DB_VERSION);

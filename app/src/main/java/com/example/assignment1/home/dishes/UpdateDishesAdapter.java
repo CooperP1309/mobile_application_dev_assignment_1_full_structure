@@ -15,10 +15,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.assignment1.R;
 import com.example.assignment1.home.Model;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHolder>{
+public class UpdateDishesAdapter extends RecyclerView.Adapter<UpdateDishesAdapter.MyViewHolder>{
 
+    int selectedIndex;
     private List<DishModel> modelList;
     private OnSelectionChangedListener selectionChangedListener;
     private int selectedPosition = RecyclerView.NO_POSITION;
@@ -28,7 +30,7 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
     }
 
     // constructor injection of the model list
-    public DishesAdapter(List<DishModel> theModelList){
+    public UpdateDishesAdapter(List<DishModel> theModelList){
         modelList = theModelList;
     }
 
@@ -46,50 +48,56 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
         holder.textView.setText(tempModel.getText());
 
         if (!tempModel.isSelectable()) {    // non-selectable model is a Label/group title row
-            Log.i("DishAdpt","Setting as non-selectable: " + tempModel.getText());
             holder.textView.setTypeface(null, Typeface.BOLD);
             holder.textView.setTextSize(25);
-            holder.imageView.setVisibility(View.GONE);
 
             // setting larger layout margins
             ViewGroup.MarginLayoutParams layoutParams =
                     (ViewGroup.MarginLayoutParams) holder.textView.getLayoutParams();
             layoutParams.setMargins(0, 30, 0, 30);
         }
-        else {
-            holder.textView.setTypeface(null, Typeface.NORMAL);
-            holder.textView.setTextSize(14);
 
-            // only assign image if model has an image
-            if (tempModel.hasImage()) {
-                Log.i("DishAdapt", "Found image in Dish object: " +
-                        tempModel.getText());
-                holder.imageView.setImageURI(tempModel.getImage());
-            }
-            else {
-                holder.imageView.setVisibility(View.GONE);
-                Log.i("DishAdapt", "No image found in Dish object: " +
-                        tempModel.getText());
-            }
+        // only assign image if model has an image
+        if (tempModel.hasImage()) {
+            Log.i("DishAdapt", "Found image in Dish object");
+            holder.imageView.setImageURI(tempModel.getImage());
+        }
+        else {
+            holder.imageView.setVisibility(View.GONE);
+            Log.i("DishAdapt", "No image found in Dish object");
         }
 
-        // on LONG click
-        holder.itemView.setOnClickListener(v1 -> {
+        // ------------ select only one logic ------------
 
-            //if the item was selected, it becomes unselected, change background from gray to white
-            if (modelList.get(position).isSelected()) {
-                holder.itemView.setBackgroundColor(Color.WHITE);
-                modelList.get(position).setSelected(false); //item become unslected
-            }
-            else if (modelList.get(position).isSelectable() && !modelList.get(position).isSelected()){ //otherwise, the item was not selected, after the click, it is selected, change background to gray
-                holder.itemView.setBackgroundColor(Color.GRAY);
-                modelList.get(position).setSelected(true); //mark the item selected
-            }
+        // drawing the UI from the current modelList state
+        holder.itemView.setBackgroundColor(tempModel.isSelected() ? Color.GRAY : Color.WHITE);
 
-            // this public interface holds a single bool that tells fragments
-            // if the adapted has at least one row selected
-            if (selectionChangedListener != null) {
-                selectionChangedListener.onSelectionChanged(hasSelected());
+        //on NORMAL click
+        holder.itemView.setOnClickListener(v -> {
+            if (modelList.get(position).isSelectable()) {
+
+
+                int pos = holder.getAdapterPosition();
+
+                if (pos == RecyclerView.NO_POSITION) {      // case for no selected position
+                    return;
+                }
+
+                // unselecting of all other positions previous position (if necessary)
+                List<Integer> selectedPos = getSelectedPositions();
+                for (int i : selectedPos) {
+                    modelList.get(i).setSelected(false);
+                    notifyItemChanged(i);     // This method must be called in OnBind...
+                }
+
+                // selecting of currently clicked position
+                modelList.get(pos).setSelected(true);
+                selectedIndex = pos;    // updating selected pos
+                notifyItemChanged(pos); // commiting colour update
+
+                if (selectionChangedListener != null) {
+                    selectionChangedListener.onSelectionChanged(hasSelected());
+                }
             }
         });
     }
@@ -121,6 +129,18 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
         }
 
         return selectedString;
+    }
+
+    public List<Integer> getSelectedPositions() {
+        List<Integer> selectedPositions = new ArrayList<Integer>();
+
+        for (int i=0; i< modelList.size(); i++) {       // for each model in the list
+            if (modelList.get(i).isSelected()) {        // if it is selected
+                selectedPositions.add(i);               // add to list
+            }
+        }
+
+        return selectedPositions;
     }
 
     public boolean hasSelected() {

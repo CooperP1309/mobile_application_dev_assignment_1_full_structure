@@ -93,17 +93,31 @@ tools:context=".home.orders.OrdersFragment">
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            >
+            android:visibility="gone">
 
-            <TextView
-                android:id="@+id/textCreateTitle"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="25dp"
-                android:layout_marginLeft="65dp"
-                android:text="Make an Order"
-                android:textSize="20sp"
-                android:textStyle="bold"/>
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textCreateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:layout_marginLeft="65dp"
+                    android:text="Make an Order"
+                    android:textSize="20sp"
+                    android:textStyle="bold"/>
+                <ImageButton
+                    android:id="@+id/buttonExitCreate"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="150dp"
+                    android:layout_marginTop="15dp"
+                    android:src="@android:drawable/btn_dialog" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/editAddOrderID"
@@ -201,17 +215,31 @@ tools:context=".home.orders.OrdersFragment">
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
+            >
 
-            <TextView
-                android:id="@+id/textUpdateTitle"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="25dp"
-                android:layout_marginLeft="65dp"
-                android:text="Update an Order"
-                android:textSize="20sp"
-                android:textStyle="bold"/>
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textUpdateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="25dp"
+                    android:layout_marginLeft="65dp"
+                    android:text="Update an Order"
+                    android:textSize="20sp"
+                    android:textStyle="bold"/>
+                <ImageButton
+                    android:id="@+id/buttonExitUpdate"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="150dp"
+                    android:layout_marginTop="15dp"
+                    android:src="@android:drawable/btn_dialog" />
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerUpdateOrders"
@@ -220,15 +248,32 @@ tools:context=".home.orders.OrdersFragment">
                 android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp" />
 
-            <EditText
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/buttonDeleteUpdate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:layout_marginStart="25dp"
+                    android:text="Delete"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textResponse" />
+
+
+                <EditText
                 android:id="@+id/editUpdateTableNumber"
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
+                android:layout_marginStart="20dp"
                 android:layout_marginTop="10dp"
                 android:ems="10"
                 android:inputType="text"
                 android:hint="Table No." />
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"

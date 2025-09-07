@@ -46,6 +46,8 @@ public class Dish {
                 "Arg4: " + dishArgs[4] + "\n" +
                 "Arg5: " + dishArgs[5]);
 
+        dishArgs[5] = dishArgs[5].trim();
+
         dishID = Integer.parseInt(dishArgs[0]);
         dishName = dishArgs[1];
         dishType = dishArgs[2];

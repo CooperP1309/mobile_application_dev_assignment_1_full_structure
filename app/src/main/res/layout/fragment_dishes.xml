@@ -31,7 +31,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            >
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -90,16 +90,31 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/textCreateTitle"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
-                android:layout_marginTop="25dp"
-                android:text="Add a Dish"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textCreateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="80dp"
+                    android:layout_marginTop="25dp"
+                    android:text="Add a Dish"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/buttonExitCreate"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="150dp"
+                    android:layout_marginTop="15dp"
+                    android:src="@android:drawable/btn_dialog" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/editAddDishID"
@@ -251,37 +266,69 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             android:orientation="vertical"
-            android:visibility="gone">
+            android:background="#FFF"
+            >
 
-            <TextView
-                android:id="@+id/textUpdateTitle"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
-                android:layout_marginTop="25dp"
-                android:text="Update a Dish"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textUpdateTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="80dp"
+                    android:layout_marginTop="25dp"
+                    android:text="Update a Dish"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/buttonExitUpdate"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="150dp"
+                    android:layout_marginTop="15dp"
+                    android:src="@android:drawable/btn_dialog" />
+            </LinearLayout>
+
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerUpdate"
-                android:layout_width="250dp"
-                android:layout_height="100dp"
-                android:layout_marginStart="80dp"
+                android:layout_width="380dp"
+                android:layout_height="150dp"
+                android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp"
                 />
 
-            <EditText
-                android:id="@+id/editUpdateDishName"
-                android:layout_width="200dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
-                android:layout_marginTop="10dp"
-                android:ems="10"
-                android:inputType="text"
-                android:hint="Dish Name" />
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/buttonDeleteUpdate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:layout_marginStart="25dp"
+                    android:text="Delete"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textResponse" />
 
+
+                <EditText
+                    android:id="@+id/editUpdateDishName"
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="10dp"
+                    android:ems="10"
+                    android:inputType="text"
+                    android:hint="Dish Name" />
+            </LinearLayout>
             <TextView
                 android:id="@+id/textUpdateDishTypeTitle"
                 android:layout_width="wrap_content"
@@ -361,33 +408,36 @@
                 android:orientation="horizontal"
                 android:layout_marginTop="10dp">
 
-                <ImageView
-                    android:id="@+id/imageUpdateView"
-                    android:layout_width="37dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="80dp"
-                    android:layout_weight="1"
-                    android:src="@drawable/outline_article_24" />
+                <Button
+                    android:id="@+id/buttonSelectedUpdateDish"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginTop="35dp"
+                    android:text="Update"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/textResponse" />
 
                 <Button
                     android:id="@+id/buttonImageUpdate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="50dp"
+                    android:layout_marginTop="35dp"
+                    android:layout_marginStart="25dp"
                     android:text="Browse"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/textResponse" />
-            </LinearLayout>
 
-            <Button
-                android:id="@+id/buttonSelectedUpdateDish"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="250dp"
-                android:layout_marginTop="10dp"
-                android:text="Update"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textResponse" />
+                <ImageView
+                    android:id="@+id/imageUpdateView"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_weight="1"
+                    android:src="@drawable/outline_article_24" />
+
+
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/textUpdateErrorResponse"

@@ -71,7 +71,18 @@ public class OrdersFragment extends Fragment {
             showUpdateForm();
         });
 
+        handleCloseButtons();
+
         return binding.getRoot();
+    }
+
+    private void handleCloseButtons() {
+        binding.buttonExitCreate.setOnClickListener(v->{
+            retrieveOrders();
+        });
+        binding.buttonExitUpdate.setOnClickListener(v->{
+            retrieveOrders();
+        });
     }
 
     private void showCreateForm() {
@@ -91,15 +102,17 @@ public class OrdersFragment extends Fragment {
         // event trigger - user selects a dish
         normalAdapter.setOnSelectionChangedListener(hasSelected -> {
 
-            // push that row into a dish object
-            String selectedRows = normalAdapter.getSelected().toString();
+            if (hasSelected) {
+                // push that row into a dish object
+                String selectedRows = normalAdapter.getSelected().toString();
 
-            // get total price from the currently selected rows
-            Log.i("OrderFrag", "Calling totalPrice from createForm()");
-            Double price = getTotalPrice(selectedRows);
+                // get total price from the currently selected rows
+                Log.i("OrderFrag", "Calling totalPrice from createForm()");
+                Double price = getTotalPrice(selectedRows);
 
-            // set the price field to reflect this
-            binding.editAddPrice.setText(price.toString());
+                // set the price field to reflect this
+                binding.editAddPrice.setText(price.toString());
+            }
         });
 
         // event trigger - user attempts to add order with form details filled
@@ -305,14 +318,16 @@ public class OrdersFragment extends Fragment {
         // event trigger - user selects a dish
         normalAdapter.setOnSelectionChangedListener(hasSelected -> {
 
-            // push that row into a dish object
-            String selectedRows = normalAdapter.getSelected().toString();
+            if (hasSelected) {
+                // push that row into a dish object
+                String selectedRows = normalAdapter.getSelected().toString();
 
-            // get total price from the currently selected rows
-            Double price = getTotalPrice(selectedRows);
+                // get total price from the currently selected rows
+                Double price = getTotalPrice(selectedRows);
 
-            // set the price field to reflect this
-            binding.editUpdatePrice.setText(price.toString());
+                // set the price field to reflect this
+                binding.editUpdatePrice.setText(price.toString());
+            }
         });
 
         // when a recycler view row is selected...
@@ -357,6 +372,21 @@ public class OrdersFragment extends Fragment {
 
             // show updated data
             reloadFragment();
+        });
+
+        binding.buttonDeleteUpdate.setOnClickListener(v->{
+            // get the selected record
+            String selectedRecord = orderAdapter.getSelected();
+
+            if (selectedRecord.isEmpty()) {
+                binding.textUpdateErrorResponse.setText("No order is selected");
+            }
+            else {
+                int id = getIdFromDbLine(selectedRecord);
+                int [] idList = {id};
+                orderDbManager.deleteRows(idList);
+                reloadFragment();
+            }
         });
     }
 
@@ -698,6 +728,7 @@ public class OrdersFragment extends Fragment {
 
         // retrieve the dish db rows
         String rows = dishDbManager.retrieveRowsWithoutImage();
+        String currentDishGroup = "";
 
         // store rows in a model array
         String[] lines = rows.split("\\R"); // any newline
@@ -709,18 +740,22 @@ public class OrdersFragment extends Fragment {
             // get the id of the current record
             int id = getIdFromDbLine(line);
 
-            // use id to get that records imageUri
-            String imageUriStr = dishDbManager.retrieveImageUri(id);
+            // get the dish type from the ID
+            String dishType = dishDbManager.retrieveDishType(id);
 
+            // if we encounter a new dish type, make a label row for it
+            if (!currentDishGroup.equals(dishType)) {
+                modelList.add(new DishModel(dishType + "s", false, false));
+                currentDishGroup = dishType;
+            }
+
+            // handling of a records ImageUri
+            String imageUriStr = dishDbManager.retrieveImageUri(id);
             if (imageUriStr == null) {      // add an imageless model if no uri was returned from db
                 modelList.add(new DishModel(line.trim(), false));
             }
             else {
                 Uri imageUri = Uri.parse(imageUriStr);
-                // imageUri is handled separately from rest of model list as to
-                // not have uri displayed in the dish label text
-
-                // convert uri to bitmap and pass it to new DishModel
                 Bitmap image = loadFromUri(imageUri);
                 modelList.add(new DishModel(line.trim(), false, imageUri));
             }

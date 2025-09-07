@@ -64,8 +64,19 @@ public class DishesFragment extends Fragment {
             updateForm();
         });
 
+        handleCloseButtons();
+
         // Inflate the layout for this fragment
         return binding.getRoot();
+    }
+
+    private void handleCloseButtons() {
+        binding.buttonExitCreate.setOnClickListener(v->{
+            retrieveDishes();
+        });
+        binding.buttonExitUpdate.setOnClickListener(v->{
+            retrieveDishes();
+        });
     }
 
     private void retrieveDishes() {
@@ -210,7 +221,7 @@ public class DishesFragment extends Fragment {
         binding.updateForm.setVisibility(View.VISIBLE);
 
         // inflate recycler adapter
-        UpdateAdapter updateAdapter = new UpdateAdapter(sortModelList());
+        UpdateDishesAdapter updateAdapter = new UpdateDishesAdapter(sortDishModelList());
         binding.recyclerUpdate.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerUpdate.setAdapter(updateAdapter);
         binding.recyclerUpdate.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
@@ -221,22 +232,42 @@ public class DishesFragment extends Fragment {
 
         // image browsing listener
         binding.buttonImageUpdate.setOnClickListener(v->{
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("image/*");
-            startActivityForResult(intent, 1000); // code: 1000 = request pick image
+            // clear the current image view
+            binding.imageUpdateView.setImageResource(0);
+
+            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType("image/*");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(i, 1000);
         });
 
         // when a recycler view row is selected...
         updateAdapter.setOnSelectionChangedListener(hasSelected -> {
 
-            // push that row into a dish object
-            String selectedRow = updateAdapter.getSelected().toString();
-            Dish selectedDish = new Dish(selectedRow);
+            if (hasSelected) {
+                // push that row into a dish object
+                String selectedRow = updateAdapter.getSelected();
 
-            // set the field of the update form to reflect the properties of the dish object
-            setUpdateFormFields(selectedDish);
+                Log.i("DishFrag", "Dish selected in update form: " + selectedRow);
+                // dish constructor expects an extra field for the imageUri
+
+                // get the imageUri for this record
+                int id = getIdFromDbLine(selectedRow);
+                String imageUriStr = databaseManager.retrieveImageUri(id);
+                if (imageUriStr == null) {      // add an imageless model if no uri was returned from db
+                    selectedRow+= ", ";
+                }
+                else {
+                    selectedRow += ", " + imageUriStr;
+                }
+
+                Dish selectedDish = new Dish(selectedRow);
+
+                // set the field of the update form to reflect the properties of the dish object
+                setUpdateFormFields(selectedDish);
+            }
         });
-
 
         binding.buttonSelectedUpdateDish.setOnClickListener(v->{
 
@@ -281,6 +312,21 @@ public class DishesFragment extends Fragment {
             Dish newDish = new Dish(selectedDish.getDishID(), dishName, dishType, ingredients, price, imageUri);
             databaseManager.updateRow(newDish);
             reloadFragment();
+        });
+
+        binding.buttonDeleteUpdate.setOnClickListener(v->{
+            // get the selected record
+            String selectedRecord = updateAdapter.getSelected();
+
+            if (selectedRecord.isEmpty()) {
+                binding.textUpdateErrorResponse.setText("No dish is selected");
+            }
+            else {
+                int id = getIdFromDbLine(selectedRecord);
+                int [] idList = {id};
+                databaseManager.deleteRows(idList);
+                reloadFragment();
+            }
         });
     }
 
@@ -337,6 +383,47 @@ public class DishesFragment extends Fragment {
 
         // retrieve the dish db rows
         String rows = databaseManager.retrieveRowsWithoutImage();
+        String currentDishGroup = "";
+
+        // store rows in a model array
+        String[] lines = rows.split("\\R"); // any newline
+        for (String line : lines) {
+            if (line.trim().isEmpty()) continue;
+            // replace first '.' with ',' for Dish Conversion (else double val will break)
+            line = line.replaceFirst("\\.", ",");
+
+            // get the id of the current record
+            int id = getIdFromDbLine(line);
+
+            // get the dish type from the ID
+            String dishType = databaseManager.retrieveDishType(id);
+
+            // if we encounter a new dish type, make a label row for it
+            if (!currentDishGroup.equals(dishType)) {
+                modelList.add(new DishModel(dishType + "s", false, false));
+                currentDishGroup = dishType;
+            }
+
+            // handling of a records ImageUri
+            String imageUriStr = databaseManager.retrieveImageUri(id);
+            if (imageUriStr == null) {      // add an imageless model if no uri was returned from db
+                modelList.add(new DishModel(line.trim(), false));
+            }
+            else {
+                Uri imageUri = Uri.parse(imageUriStr);
+                Bitmap image = loadFromUri(imageUri);
+                modelList.add(new DishModel(line.trim(), false, imageUri));
+            }
+        }
+
+        return modelList;
+    }
+
+    /*private List<DishModel> sortDishModelList() {
+        List<DishModel> modelList = new ArrayList<>();
+
+        // retrieve the dish db rows
+        String rows = databaseManager.retrieveRowsWithoutImage();
 
         // store rows in a model array
         String[] lines = rows.split("\\R"); // any newline
@@ -366,7 +453,7 @@ public class DishesFragment extends Fragment {
         }
 
         return modelList;
-    }
+    }*/
 
     private int getIdFromDbLine(String recordString) {
 
@@ -452,6 +539,11 @@ public class DishesFragment extends Fragment {
 
         binding.editUpdateIndgredients.setText(dish.getIngredients());
         binding.editUpdatePrice.setText(Double.toString(dish.getPrice()));
+
+        if (!dish.getImage().isEmpty()) {
+            Uri uri = Uri.parse(dish.getImage());
+            binding.imageUpdateView.setImageURI(uri);
+        }
     }
 }
 
