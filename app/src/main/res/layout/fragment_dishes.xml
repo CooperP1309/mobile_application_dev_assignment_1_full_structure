@@ -30,7 +30,8 @@
             android:id="@+id/manageDishesForm"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            >
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -61,8 +62,8 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerSelect"
-                android:layout_width="300dp"
-                android:layout_height="300dp"
+                android:layout_width="380dp"
+                android:layout_height="450dp"
                 android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp"
                 />
@@ -71,7 +72,7 @@
                 android:id="@+id/buttonRemoveSelected"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="25dp"
+                android:layout_marginStart="200dp"
                 android:layout_marginTop="25dp"
                 android:text="Remove Selected"
                 android:visibility="gone"
@@ -202,8 +203,8 @@
 
                 <ImageView
                     android:id="@+id/imageView"
-                    android:layout_width="37dp"
-                    android:layout_height="match_parent"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
                     android:layout_marginStart="80dp"
                     android:layout_weight="1"
                     android:src="@drawable/outline_article_24" />
@@ -212,6 +213,7 @@
                     android:id="@+id/buttonImageAdd"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="35dp"
                     android:layout_marginStart="50dp"
                     android:text="Browse"
                     app:layout_constraintStart_toStartOf="parent"
@@ -223,8 +225,8 @@
                 android:id="@+id/buttonFinalAddDish"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
-                android:layout_marginTop="30dp"
+                android:layout_marginStart="250dp"
+                android:layout_marginTop="20dp"
                 android:text="Create Dish"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textResponse" />

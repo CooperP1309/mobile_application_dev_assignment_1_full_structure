@@ -7,13 +7,12 @@ import com.example.assignment1.home.Model;
 public class Dish {
 
     private int dishID;
-    private String dishName, dishType, ingredients;
+    private String dishName, dishType, ingredients, image;
     private Double price;
-    private Bitmap image;
 
     // constructor for addRecord use
     public Dish(String theDishName, String theDishType, String theIngredients
-            , Double thePrice, Bitmap theImage) {
+            , Double thePrice, String theImage) {
         dishName = theDishName;
         dishType = theDishType;
         ingredients = theIngredients;
@@ -23,7 +22,7 @@ public class Dish {
 
     // constructor for updateRecord use (ID to reference record in db)
     public Dish(int theDishID, String theDishName, String theDishType, String theIngredients
-            , Double thePrice, Bitmap theImage) {
+            , Double thePrice, String theImage) {
         dishID = theDishID;
         dishName = theDishName;
         dishType = theDishType;
@@ -34,8 +33,6 @@ public class Dish {
 
     // constructor for reprocessing retrieved dish rows from db
     public Dish(String string) {
-        byte[] theImage = new byte[0];
-
         //String[] dishArgs = string.trim().split("\\s+"); // Handles multiple spaces and trims
         String[] dishArgs = string.split(",");
 
@@ -46,14 +43,15 @@ public class Dish {
                 "Arg1: " + dishArgs[1] + "\n" +
                 "Arg2: " + dishArgs[2] + "\n" +
                 "Arg3: " + dishArgs[3] + "\n" +
-                "Arg4: " + dishArgs[4]);
+                "Arg4: " + dishArgs[4] + "\n" +
+                "Arg5: " + dishArgs[5]);
 
         dishID = Integer.parseInt(dishArgs[0]);
         dishName = dishArgs[1];
         dishType = dishArgs[2];
         ingredients = dishArgs[3];
         price = Double.parseDouble(dishArgs[4]);
-        image = BitmapConvert.toBitmap(theImage);
+        image = dishArgs[5];
     }
 
     public int getDishID() {
@@ -76,7 +74,7 @@ public class Dish {
         return price;
     }
 
-    public Bitmap getBitmap() {
+    public String getImage() {
         return image;
     }
 
@@ -96,7 +94,7 @@ public class Dish {
         this.price = price;
     }
 
-    public Bitmap getImage() {
-        return image;
+    public void setImage(String image){
+        this.image = image;
     }
 }

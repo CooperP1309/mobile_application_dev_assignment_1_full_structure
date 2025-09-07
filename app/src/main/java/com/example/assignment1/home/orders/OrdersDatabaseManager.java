@@ -86,11 +86,24 @@ public class OrdersDatabaseManager {
             // append retrieved record details to result string
             tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
                     + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
-                    + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
+                    + ", " + cursor.getDouble(4) + "\n";
 
             // iterate to next cursor
             cursor.moveToNext();
         }
+
+        /* WITH TIME INCLUDED IMPLEMENTATION
+        // while not past the last record in the table
+        while (cursor.isAfterLast() == false) {
+
+            // append retrieved record details to result string
+            tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
+                    + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
+                    + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
+
+            // iterate to next cursor
+            cursor.moveToNext();
+        }*/
 
         // closing of cursor
         if (cursor != null && !cursor.isClosed()) {

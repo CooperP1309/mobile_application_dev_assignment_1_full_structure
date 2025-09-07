@@ -1,8 +1,14 @@
 package com.example.assignment1.home.dishes;
 
+import static android.app.Activity.RESULT_OK;
+
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.ImageDecoder;
+import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -19,6 +25,7 @@ import com.example.assignment1.databinding.FragmentDishesBinding;
 import com.example.assignment1.databinding.FragmentHomeBinding;
 import com.example.assignment1.home.Model;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +33,7 @@ public class DishesFragment extends Fragment {
 
     private FragmentDishesBinding binding;
     private DishDatabaseManager databaseManager;
+    private Uri createdUri;
 
     public DishesFragment() {
         // Required empty public constructor
@@ -67,7 +75,7 @@ public class DishesFragment extends Fragment {
         binding.updateForm.setVisibility(View.GONE);
 
         // inflate recycler adapter
-        NormalAdapter normalAdapter = new NormalAdapter(sortModelList());
+        DishesAdapter normalAdapter = new DishesAdapter(sortDishModelList());
         binding.recyclerSelect.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerSelect.setAdapter(normalAdapter);
         binding.recyclerSelect.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
@@ -94,6 +102,23 @@ public class DishesFragment extends Fragment {
         binding.manageDishesForm.setVisibility(View.GONE);
         binding.updateForm.setVisibility(View.GONE);
 
+        // on create set global uri to null as to not accidentally push an old selection
+        // into a new record
+        createdUri = null;
+
+        // image browsing listener
+        binding.buttonImageAdd.setOnClickListener(v->{
+            /*Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            startActivityForResult(intent, 1000); // code: 1000 = request pick image*/
+
+            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType("image/*");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(i, 1000);
+        });
+
         binding.buttonFinalAddDish.setOnClickListener(v->{
 
             // extract all variables from form
@@ -104,7 +129,13 @@ public class DishesFragment extends Fragment {
             String ingredients = binding.editAddIndgredients.getText().toString();
             String priceStr = binding.editAddPrice.getText().toString();
             double price;
-            Bitmap image = null;
+            String imageUri;
+            if (createdUri == null) {
+                imageUri = "";
+            }
+            else {
+                imageUri = createdUri.toString();
+            }
 
             // error check variables (empty and dupe ID)
             if (dishIdStr.isEmpty() || dishName.isEmpty() || selectedDishTypeId == -1
@@ -132,10 +163,44 @@ public class DishesFragment extends Fragment {
             // commas are used by SQL to divide columns/fields
             ingredients = ingredients.replace(',', '|');
 
-            Dish newDish = new Dish(dishId, dishName, dishType, ingredients, price, image);
+            Dish newDish = new Dish(dishId, dishName, dishType, ingredients, price, imageUri);
             databaseManager.addRow(newDish);
             reloadFragment();
         });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        /*
+        if (resultCode == RESULT_OK && requestCode == 1000) {   // case where user picked an image successfully
+            Uri uri = data.getData();
+            Bitmap bitmap = loadFromUri(uri);
+            binding.imageView.setImageBitmap(bitmap);
+            createdUri = uri;   // assign global variable for access when pushing form data in db
+            //binding.textAddErrorResponse.setText(uri.toString()); // test the val of a uri here
+        }*/
+        if (resultCode == RESULT_OK && requestCode == 1000 && data != null) {
+            Uri uri = data.getData();
+            requireContext().getContentResolver().takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
+            createdUri = uri;
+            binding.imageView.setImageURI(uri);
+        }
+    }
+
+    private Bitmap loadFromUri(Uri uri) {
+        Bitmap bitmap = null;
+
+        try{
+            ImageDecoder.Source source = ImageDecoder.createSource(requireContext().getContentResolver(), uri);
+            bitmap = ImageDecoder.decodeBitmap(source);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
     }
 
     private void updateForm() {
@@ -149,6 +214,17 @@ public class DishesFragment extends Fragment {
         binding.recyclerUpdate.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerUpdate.setAdapter(updateAdapter);
         binding.recyclerUpdate.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
+
+        // on create set global uri to null as to not accidentally push an old selection
+        // into a new record
+        createdUri = null;
+
+        // image browsing listener
+        binding.buttonImageUpdate.setOnClickListener(v->{
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            startActivityForResult(intent, 1000); // code: 1000 = request pick image
+        });
 
         // when a recycler view row is selected...
         updateAdapter.setOnSelectionChangedListener(hasSelected -> {
@@ -174,7 +250,13 @@ public class DishesFragment extends Fragment {
             String ingredients = binding.editUpdateIndgredients.getText().toString();
             String priceStr = binding.editUpdatePrice.getText().toString();
             double price;
-            Bitmap image = null;
+            String imageUri;
+            if (createdUri == null) {
+                imageUri = "";
+            }
+            else {
+                imageUri = createdUri.toString();
+            }
 
             // error check variables
             if (dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
@@ -196,7 +278,7 @@ public class DishesFragment extends Fragment {
             // commas are used by SQL to divide columns/fields
             ingredients = ingredients.replace(',', '|');
 
-            Dish newDish = new Dish(selectedDish.getDishID(), dishName, dishType, ingredients, price, image);
+            Dish newDish = new Dish(selectedDish.getDishID(), dishName, dishType, ingredients, price, imageUri);
             databaseManager.updateRow(newDish);
             reloadFragment();
         });
@@ -235,7 +317,7 @@ public class DishesFragment extends Fragment {
         List<Model> modelList = new ArrayList<>();
 
         // retrieve the dish db rows
-        String rows = databaseManager.retrieveRows();
+        String rows = databaseManager.retrieveRowsWithoutImage();
 
         // store rows in a model array
         String[] lines = rows.split("\\R"); // any newline
@@ -250,6 +332,57 @@ public class DishesFragment extends Fragment {
         return modelList;
     }
 
+    private List<DishModel> sortDishModelList() {
+        List<DishModel> modelList = new ArrayList<>();
+
+        // retrieve the dish db rows
+        String rows = databaseManager.retrieveRowsWithoutImage();
+
+        // store rows in a model array
+        String[] lines = rows.split("\\R"); // any newline
+        for (String line : lines) {
+            if (line.trim().isEmpty()) continue;
+            // replace first '.' with ',' for Dish Conversion (else double val will break)
+            line = line.replaceFirst("\\.", ",");
+
+            // get the id of the current record
+            int id = getIdFromDbLine(line);
+
+            // use id to get that records imageUri
+            String imageUriStr = databaseManager.retrieveImageUri(id);
+
+            if (imageUriStr == null) {      // add an imageless model if no uri was returned from db
+                modelList.add(new DishModel(line.trim(), false));
+            }
+            else {
+                Uri imageUri = Uri.parse(imageUriStr);
+                // imageUri is handled separately from rest of model list as to
+                // not have uri displayed in the dish label text
+
+                // convert uri to bitmap and pass it to new DishModel
+                Bitmap image = loadFromUri(imageUri);
+                modelList.add(new DishModel(line.trim(), false, imageUri));
+            }
+        }
+
+        return modelList;
+    }
+
+    private int getIdFromDbLine(String recordString) {
+
+        String idStr = "";
+
+        for (int i=0; i<recordString.indexOf(',');i++) {
+            idStr += recordString.charAt(i);
+        }
+
+        // removing of white spaces
+        idStr = idStr.replaceAll("\\s+", "");
+        Log.i("DishFrag", "Extracted ID: '" + idStr + "'");
+
+        return Integer.parseInt(idStr);
+    }
+
     private void reloadFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
 
@@ -262,7 +395,7 @@ public class DishesFragment extends Fragment {
     private boolean checkIdUnique(int givenId) {
 
         // get all rows from database
-        String rows = databaseManager.retrieveRows();
+        String rows = databaseManager.retrieveRowsWithoutImage();
 
         // sort rows into array
         String[] lines = rows.split("\\R");
@@ -321,9 +454,6 @@ public class DishesFragment extends Fragment {
         binding.editUpdatePrice.setText(Double.toString(dish.getPrice()));
     }
 }
-
-
-
 
 
 

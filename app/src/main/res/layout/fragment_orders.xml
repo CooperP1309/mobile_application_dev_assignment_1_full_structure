@@ -29,7 +29,8 @@ tools:context=".home.orders.OrdersFragment">
             android:id="@+id/formManage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -64,26 +65,25 @@ tools:context=".home.orders.OrdersFragment">
                 android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp" />
 
-            <LinearLayout
-                android:id="@+id/selectedOnlyView"
+            <TextView
+                android:id="@+id/textProcessingTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:visibility="gone">
-                <Button
-                    android:id="@+id/buttonDeleteOrder"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="20dp"
-                    android:text="Delete Selected"
-                    app:layout_constraintStart_toStartOf="@+id/myTextView"
-                    app:layout_constraintTop_toBottomOf="@+id/myTextView" />
-                <TextView
-                    android:id="@+id/textProcessingTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
+                android:layout_marginLeft="35dp"
+                android:textStyle="italic"
+                android:textSize="20sp"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/buttonDeleteOrder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="20dp"
+                android:text="Delete Selected"
+                app:layout_constraintStart_toStartOf="@+id/myTextView"
+                app:layout_constraintTop_toBottomOf="@+id/myTextView" />
         </LinearLayout>
 
 
@@ -93,7 +93,7 @@ tools:context=".home.orders.OrdersFragment">
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
+            >
 
             <TextView
                 android:id="@+id/textCreateTitle"
@@ -162,8 +162,8 @@ tools:context=".home.orders.OrdersFragment">
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerAddDishes"
                 android:layout_width="300dp"
-                android:layout_height="120dp"
-                android:layout_marginStart="25dp"
+                android:layout_height="210dp"
+                android:layout_marginStart="60dp"
                 android:layout_marginTop="25dp" />
 
             <EditText

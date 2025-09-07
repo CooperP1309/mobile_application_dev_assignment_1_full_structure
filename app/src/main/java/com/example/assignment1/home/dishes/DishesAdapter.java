@@ -1,9 +1,11 @@
-package com.example.assignment1.home.orders;
+package com.example.assignment1.home.dishes;
 
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -14,24 +16,18 @@ import com.example.assignment1.home.Model;
 
 import java.util.List;
 
-public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder>{
+public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHolder>{
 
-    private List<Model> modelList;
+    private List<DishModel> modelList;
     private OnSelectionChangedListener selectionChangedListener;
-    private OnShortClickListener shortClickListener;
-    public int lastSelectedPosition = RecyclerView.NO_POSITION;
-    public int lastShortClickedPosition = RecyclerView.NO_POSITION;
+    private int selectedPosition = RecyclerView.NO_POSITION;
 
     public void setOnSelectionChangedListener(OnSelectionChangedListener listener) {
         this.selectionChangedListener = listener;
     }
 
-    public void setOnShortClickListener(OnShortClickListener listener) {
-        this.shortClickListener = listener;
-    }
-
     // constructor injection of the model list
-    public OrderAdapter(List<Model> theModelList){
+    public DishesAdapter(List<DishModel> theModelList){
         modelList = theModelList;
     }
 
@@ -39,27 +35,26 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         //infalte rowlayout and return a row in the list
-        View rowItem = LayoutInflater.from(parent.getContext()).inflate(R.layout.orderrowlayout, parent, false);
+        View rowItem = LayoutInflater.from(parent.getContext()).inflate(R.layout.dishrowlayout, parent, false);
         return new MyViewHolder(rowItem);
     }
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         //assign data to row/holder at a particular position
-        Model tempModel = modelList.get(position);
+        DishModel tempModel = modelList.get(position);
         holder.textView.setText(tempModel.getText());
 
-        // normal click listener (for view processing time)
+        // only assign image if model has an image
+        if (tempModel.hasImage()) {
+            Log.i("DishAdapt", "Found image in Dish object");
+            holder.imageView.setImageURI(tempModel.getImage());
+        }
+        else {
+            Log.i("DishAdapt", "No image found in Dish object");
+        }
+
+        // on LONG click
         holder.itemView.setOnClickListener(v1 -> {
-
-            setLastShortClickedPosition(position);
-
-            if (shortClickListener != null) {
-                shortClickListener.onShortClickMade(checkShortClickMade());
-            }
-        });
-
-        // long click listener (for deletion)
-        holder.itemView.setOnLongClickListener(v1 -> {
 
             //if the item was selected, it becomes unselected, change background from gray to white
             if (modelList.get(position).isSelected()) {
@@ -69,7 +64,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
             else { //otherwise, the item was not selected, after the click, it is selected, change background to gray
                 holder.itemView.setBackgroundColor(Color.GRAY);
                 modelList.get(position).setSelected(true); //mark the item selected
-                //setLastSelectedPosition(position);
             }
 
             // this public interface holds a single bool that tells fragments
@@ -77,8 +71,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
             if (selectionChangedListener != null) {
                 selectionChangedListener.onSelectionChanged(hasSelected());
             }
-
-            return true;
         });
     }
     @Override
@@ -87,17 +79,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
         return modelList.size();
     }
 
-    public void setLastSelectedPosition(int position) {
-        lastSelectedPosition = position;
-    }
+    // Call this from outside the adapter to select an item
+    public void setSelectedPosition(int position) {
+        int oldPosition = selectedPosition;
+        selectedPosition = position;
 
-    /*
-    public String getLastSelectedPositionString() {
-        if (lastSelectedPosition == RecyclerView.NO_POSITION) {
-            return "";
-        }
-        return modelList.get(lastSelectedPosition).getText();
-    }*/
+        // Refresh old and new so UI updates correctly
+        notifyItemChanged(oldPosition);
+        notifyItemChanged(selectedPosition);
+    }
 
     public String getSelected() {
 
@@ -123,32 +113,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
         return false;
     }
 
-    public String getLastShortClickedPosString() {
-        if (lastShortClickedPosition == RecyclerView.NO_POSITION) {
-            return "";
-        }
-        return modelList.get(lastShortClickedPosition).getText();
-    }
-
-    public void setLastShortClickedPosition(int position) {
-        lastShortClickedPosition = position;
-    }
-
-    public boolean checkShortClickMade() {
-        if (lastShortClickedPosition != RecyclerView.NO_POSITION) {
-            return  true;
-        }
-        return false;
-    }
-
     //viewHolder class to display a row
     public static class MyViewHolder extends RecyclerView.ViewHolder  {
         private TextView textView;
+        private ImageView imageView;
 
         public MyViewHolder(View view) { //constructor
             super(view);
 
             this.textView = view.findViewById(R.id.label);
+            this.imageView = view.findViewById(R.id.imageViewDish);
         }
     }
 
@@ -156,12 +130,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.MyViewHolder
     // specifically used for changing visibility of a remove button
     public interface OnSelectionChangedListener {
         void onSelectionChanged(boolean hasSelected);
-    }
-
-    // interface allows fragment to see if something has been short clicked
-    // this will be used to show the time of the short clicked item
-    public interface OnShortClickListener {
-        void onShortClickMade(boolean shortClickHasOccurred);
     }
 }
 

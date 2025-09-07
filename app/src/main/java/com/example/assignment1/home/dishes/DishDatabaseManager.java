@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 public class DishDatabaseManager {
@@ -17,7 +18,7 @@ public class DishDatabaseManager {
     // sql string query to create a table with 3 columns
     private static final String CREATE_TABLE = "CREATE TABLE " + DB_TABLE
             + " (DishID INTEGER PRIMARY KEY, DishName TEXT NOT NULL, DishType TEXT NOT NULL," +
-            " Ingredients TEXT NOT NULL, Price REAL NOT NULL, Image BLOB);";
+            " Ingredients TEXT NOT NULL, Price REAL NOT NULL, ImageUri TEXT DEFAULT NULL);";
 
     // declaring of DB manager objects
     private SQLHelper helper;
@@ -49,16 +50,19 @@ public class DishDatabaseManager {
     public void addRow(Dish dish) {
         openWritable();
 
-        byte[] image = new byte[0];
-
         ContentValues newDish = new ContentValues();
         newDish.put("DishID", dish.getDishID());
         newDish.put("DishName", dish.getDishName());
         newDish.put("DishType", dish.getDishType());
         newDish.put("Ingredients", dish.getIngredients());
         newDish.put("Price", dish.getPrice());
-        //newDish.put("Image", BitmapConvert.toByteArr(dish.getBitmap()));
-        newDish.put("Image", image);
+        if (dish.getImage().equals("")) {       // handling of no selected image
+            newDish.putNull("ImageUri");
+        }
+        else {
+            newDish.put("ImageUri", dish.getImage());
+        }
+
         try {
             db.insertOrThrow(DB_TABLE, null, newDish);
             Log.i("DishDB", "Inserted new row");
@@ -72,10 +76,10 @@ public class DishDatabaseManager {
     }
 
 
-    public String retrieveRows() {
+    public String retrieveRowsWithoutImage() {
 
         // string array for selecting fields of table
-        String[] columns = new String[] {"DishID", "DishName", "DishType", "Ingredients", "Price","Image"};
+        String[] columns = new String[] {"DishID", "DishName", "DishType", "Ingredients", "Price"};
         openWritable();
 
         // declaring a new cursor object for our database table
@@ -91,7 +95,7 @@ public class DishDatabaseManager {
             // append retrieved record details to result string
             tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
                     + ", " + cursor.getString(2) + ", " + cursor.getString(3)
-                    + ", " + cursor.getDouble(4) + ", " + cursor.getBlob(5) + "\n";
+                    + ", " + cursor.getDouble(4) + "\n";
 
             // iterate to next cursor
             cursor.moveToNext();
@@ -106,19 +110,55 @@ public class DishDatabaseManager {
         return tablerows;
     }
 
+    /*public String retrieveRowsWithoutImage() {
+
+        // string array for selecting fields of table
+        String[] columns = new String[] {"DishID", "DishName", "DishType", "Ingredients", "Price","ImageUri"};
+        openWritable();
+
+        // declaring a new cursor object for our database table
+        Cursor cursor = db.query(DB_TABLE, columns, null, null, null, null, "DishType");
+        String tablerows = "";
+
+        // moving cursor to the first record on table
+        cursor.moveToFirst();
+
+        // while not past the last record in the table
+        while (cursor.isAfterLast() == false) {
+
+            // append retrieved record details to result string
+            tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
+                    + ", " + cursor.getString(2) + ", " + cursor.getString(3)
+                    + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
+
+            // iterate to next cursor
+            cursor.moveToNext();
+        }
+
+        // closing of cursor
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        close();
+        return tablerows;
+    }*/
+
     public void updateRow(Dish dish) {
 
         openWritable();
-
-        byte[] image = new byte[0];
 
         ContentValues updatedDish = new ContentValues();
         updatedDish.put("DishName", dish.getDishName());
         updatedDish.put("DishType", dish.getDishType());
         updatedDish.put("Ingredients", dish.getIngredients());
         updatedDish.put("Price", dish.getPrice());
-        //newDish.put("Image", BitmapConvert.toByteArr(dish.getBitmap()));
-        updatedDish.put("Image", image);
+        if (dish.getImage().equals("")) {               // handling of no image selected
+            updatedDish.putNull("ImageUri");
+        }
+        else {
+            updatedDish.put("ImageUri", dish.getImage());
+        }
 
         // preparing selected dish ID for correct type use in SQL statement
         String[] selectedDish = {Integer.toString(dish.getDishID())};
@@ -174,6 +214,32 @@ public class DishDatabaseManager {
         close();
 
         return retrievedDishName;
+    }
+
+    public String retrieveImageUri(Integer dishId) {
+
+        openReadable();
+
+        // preparing selected dish ID for correct type use in SQL statement
+        String[] selectedDish = {dishId.toString()};
+
+        // actual querying of the db
+        Cursor cursor = db.query(DB_TABLE, null, "DishID = ?", selectedDish, null, null, null);
+        Log.i("DishDB", "Searched with ID: " + selectedDish[0]);
+
+        cursor.moveToFirst();
+
+        // append retrieved record detail to result string
+        String imageUri =  cursor.getString(5);
+
+        // closing of cursor
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        close();
+
+        return imageUri;
     }
 
     public class SQLHelper extends SQLiteOpenHelper {

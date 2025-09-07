@@ -4,6 +4,8 @@ import static android.view.View.GONE;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.ImageDecoder;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -22,10 +24,13 @@ import com.example.assignment1.databinding.FragmentOrdersBinding;
 import com.example.assignment1.home.Model;
 import com.example.assignment1.home.dishes.Dish;
 import com.example.assignment1.home.dishes.DishDatabaseManager;
+import com.example.assignment1.home.dishes.DishModel;
+import com.example.assignment1.home.dishes.DishesAdapter;
 import com.example.assignment1.home.dishes.DishesFragment;
 import com.example.assignment1.home.dishes.NormalAdapter;
 import com.example.assignment1.home.dishes.UpdateAdapter;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -77,7 +82,7 @@ public class OrdersFragment extends Fragment {
         binding.formCreate.setVisibility(View.VISIBLE);
 
         // inflate select dishes recycler view
-        NormalAdapter normalAdapter = new NormalAdapter(sortDishesList());
+        DishesAdapter normalAdapter = new DishesAdapter(sortDishModelList());
         binding.recyclerAddDishes.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerAddDishes.setAdapter(normalAdapter);
         binding.recyclerAddDishes.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
@@ -90,6 +95,7 @@ public class OrdersFragment extends Fragment {
             String selectedRows = normalAdapter.getSelected().toString();
 
             // get total price from the currently selected rows
+            Log.i("OrderFrag", "Calling totalPrice from createForm()");
             Double price = getTotalPrice(selectedRows);
 
             // set the price field to reflect this
@@ -114,7 +120,7 @@ public class OrdersFragment extends Fragment {
         });
     }
 
-    private boolean validateFormData(NormalAdapter dishView) {
+    private boolean validateFormData(DishesAdapter dishView) {
         // check for empty fields
         if (binding.editAddOrderID.getText().toString().isEmpty() ||
                 binding.radioAddDiningOption.getCheckedRadioButtonId() == -1 ||
@@ -190,7 +196,7 @@ public class OrdersFragment extends Fragment {
         return true;
     }
 
-    private Order collectFormData(NormalAdapter dishView) {
+    private Order collectFormData(DishesAdapter dishView) {
         // collecting edit text data
         String orderIdStr = binding.editAddOrderID.getText().toString();
         String tableNumberStr = binding.editAddTableNumber.getText().toString();
@@ -245,9 +251,8 @@ public class OrdersFragment extends Fragment {
         // extract the price field of each record into a double
         double totalPrice = 0.0;
         for (int j=0; j< lines.length; j++) {
-            String priceStr = "";
             String line = lines[j];
-            Log.i("OrdersFrag", "Processing Dish: " + line + "\n");
+            Log.i("OrdersFrag", "Getting price from: " + line + "\n");
 
             // iterate through record until fourth comma is met (beginning of price field)
             int currentIndex = 0;
@@ -256,10 +261,20 @@ public class OrdersFragment extends Fragment {
                 Log.i("OrdersFrag", "Index at: " + currentIndex);
             }
 
+            // using index at start of price field, iterate until end of field met
+            currentIndex = currentIndex+2;
+            String priceStr = "";
+            line = line.trim(); // remove trailing whitespaces
+            for (;currentIndex<line.length();currentIndex++) {
+                priceStr += line.charAt(currentIndex);
+            }
+
+            /* No longer works as last field (bitmap) was removed from recycler
             // iterate until the next comma is reached (end of price field)
             for (currentIndex ++ ; currentIndex<line.indexOf(',', currentIndex +1); currentIndex++) {
                 priceStr = priceStr + line.charAt(currentIndex);
             }
+             */
 
             // once at end of price, process that price and restart loop
             Log.i("OrdersFrag", "Extracted price: " + priceStr);
@@ -406,6 +421,7 @@ public class OrdersFragment extends Fragment {
         String diningOption = selectedButton.getText().toString();
 
         // collecting recycler view data
+        Log.i("OrderFrag", "Calling totalPrice from collectForm()");
         String selectedDishIDs = getIdStrings(dishView.getSelected());
         double price = getTotalPrice(dishView.getSelected());
 
@@ -425,10 +441,10 @@ public class OrdersFragment extends Fragment {
         binding.recyclerSelect.setAdapter(normalAdapter);
         binding.recyclerSelect.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
-        // only showing the delete button when at least one order is selected
-        normalAdapter.setOnSelectionChangedListener(hasSelected -> {
-            if (hasSelected) {
-                binding.selectedOnlyView.setVisibility(View.VISIBLE);
+        // only showing processing time when an order is short clicked
+        normalAdapter.setOnShortClickListener(checkShortClickMade->{
+            if(checkShortClickMade){
+                binding.textProcessingTime.setVisibility(View.VISIBLE);
 
                 // get record of the most recently selected view from db
                 String mostRecentRecord = orderDbManager.retrieveOrderWithTime(getMostRecentRecordId(normalAdapter));
@@ -441,8 +457,15 @@ public class OrdersFragment extends Fragment {
 
                 binding.textProcessingTime.setText(processTime);
             }
+        });
+
+        // only showing the delete button when at least one order is selected
+        normalAdapter.setOnSelectionChangedListener(hasSelected -> {
+            if (hasSelected) {
+                binding.buttonDeleteOrder.setVisibility(View.VISIBLE);
+            }
             else {
-                binding.selectedOnlyView.setVisibility(GONE);
+                binding.buttonDeleteOrder.setVisibility(GONE);
             }
         });
 
@@ -454,7 +477,7 @@ public class OrdersFragment extends Fragment {
     }
 
     private int getMostRecentRecordId(OrderAdapter adapter) {
-        String selectedView = adapter.getLastSelectedPositionString();
+        String selectedView = adapter.getLastShortClickedPosString();
 
         // get the ID from the record
         String idStr = "";
@@ -511,7 +534,7 @@ public class OrdersFragment extends Fragment {
         // finally, get the remainder in seconds
         seconds = seconds % 60;
 
-        return "Processing Time: " + (minutes-600) + " mins and " + seconds + " secs ago";
+        return "Processing Time:\n" + (minutes-600) + " mins and " + seconds + " secs ago";
     }
 
     private void deleteOrders(String selectedOrders) {
@@ -654,7 +677,7 @@ public class OrdersFragment extends Fragment {
         List<Model> modelList = new ArrayList<>();
 
         // retrieve the dish db rows
-        String rows = dishDbManager.retrieveRows();
+        String rows = dishDbManager.retrieveRowsWithoutImage();
 
         // store rows in a model array
         String[] lines = rows.split("\\R"); // any newline
@@ -668,6 +691,69 @@ public class OrdersFragment extends Fragment {
         }
 
         return modelList;
+    }
+
+    private List<DishModel> sortDishModelList() {
+        List<DishModel> modelList = new ArrayList<>();
+
+        // retrieve the dish db rows
+        String rows = dishDbManager.retrieveRowsWithoutImage();
+
+        // store rows in a model array
+        String[] lines = rows.split("\\R"); // any newline
+        for (String line : lines) {
+            if (line.trim().isEmpty()) continue;
+            // replace first '.' with ',' for Dish Conversion (else double val will break)
+            line = line.replaceFirst("\\.", ",");
+
+            // get the id of the current record
+            int id = getIdFromDbLine(line);
+
+            // use id to get that records imageUri
+            String imageUriStr = dishDbManager.retrieveImageUri(id);
+
+            if (imageUriStr == null) {      // add an imageless model if no uri was returned from db
+                modelList.add(new DishModel(line.trim(), false));
+            }
+            else {
+                Uri imageUri = Uri.parse(imageUriStr);
+                // imageUri is handled separately from rest of model list as to
+                // not have uri displayed in the dish label text
+
+                // convert uri to bitmap and pass it to new DishModel
+                Bitmap image = loadFromUri(imageUri);
+                modelList.add(new DishModel(line.trim(), false, imageUri));
+            }
+        }
+
+        return modelList;
+    }
+
+    private int getIdFromDbLine(String recordString) {
+
+        String idStr = "";
+
+        for (int i=0; i<recordString.indexOf(',');i++) {
+            idStr += recordString.charAt(i);
+        }
+
+        // removing of white spaces
+        idStr = idStr.replaceAll("\\s+", "");
+        Log.i("DishFrag", "Extracted ID: '" + idStr + "'");
+
+        return Integer.parseInt(idStr);
+    }
+
+    private Bitmap loadFromUri(Uri uri) {
+        Bitmap bitmap = null;
+
+        try{
+            ImageDecoder.Source source = ImageDecoder.createSource(requireContext().getContentResolver(), uri);
+            bitmap = ImageDecoder.decodeBitmap(source);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
     }
 
     private void reloadFragment() {
