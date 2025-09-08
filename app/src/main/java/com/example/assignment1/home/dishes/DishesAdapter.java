@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.assignment1.R;
 import com.example.assignment1.home.Model;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHolder>{
@@ -43,7 +44,10 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         //assign data to row/holder at a particular position
         DishModel tempModel = modelList.get(position);
-        holder.textView.setText(tempModel.getText());
+
+        if (tempModel.isSelected()) {       // needed for automatic selecting (in update forms)
+            holder.itemView.setBackgroundColor(Color.GRAY);
+        }
 
         if (!tempModel.isSelectable()) {    // non-selectable model is a Label/group title row
             Log.i("DishAdpt","Setting as non-selectable: " + tempModel.getText());
@@ -64,6 +68,7 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
             if (tempModel.hasImage()) {
                 Log.i("DishAdapt", "Found image in Dish object: " +
                         tempModel.getText());
+                holder.imageView.setVisibility(View.VISIBLE);
                 holder.imageView.setImageURI(tempModel.getImage());
             }
             else {
@@ -72,6 +77,8 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
                         tempModel.getText());
             }
         }
+
+        holder.textView.setText(tempModel.getText());
 
         // on LONG click
         holder.itemView.setOnClickListener(v1 -> {
@@ -132,6 +139,50 @@ public class DishesAdapter extends RecyclerView.Adapter<DishesAdapter.MyViewHold
         }
 
         return false;
+    }
+
+    public void setSelectedFromIdArray(int[] idList) {
+
+        // getIdFromModelText() contains another for-loop. Thus, to avoid
+        // a triple nested for-loop idList will be pushed into a hashSet
+        HashSet<Integer> idHash = new HashSet<Integer>();
+        for (int i=0; i<idList.length;i++) {
+            idHash.add(idList[i]);
+        }
+
+        // for each model in the adapter, retrieve the id
+        for (DishModel tempModel: modelList) {
+            int modelId = getIdFromModel(tempModel);
+
+            // set model as selected if its ID is in the HashSet
+            if (idHash.contains(modelId)) {
+                Log.i("DishesAdapter","Setting this model as true: " + tempModel.getText());
+                tempModel.setSelected(true);
+            }
+        }
+
+        // refresh adapter to show changes
+        notifyDataSetChanged();
+        Log.i("DishesAdapter", "Changes notified");
+    }
+
+    public int getIdFromModel(DishModel model) {
+
+        if (!model.isSelectable()) {        // do not run on label models (E.g. Drinks, Mains..)
+            return -1;
+        }
+
+        String modelText = model.getText();
+        //Log.i("DishesAdapter", "Getting the ID from model text: " + modelText);
+        String idStr = "";
+
+        // id is delimited by the first occurence of a comma
+        for (int i =0; i<modelText.indexOf(',');i++){
+            idStr+=modelText.charAt(i);
+        }
+        idStr = idStr.trim();   // remove and whitespaces
+
+        return Integer.parseInt(idStr);
     }
 
     //viewHolder class to display a row

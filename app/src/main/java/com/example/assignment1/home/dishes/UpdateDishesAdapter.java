@@ -45,7 +45,6 @@ public class UpdateDishesAdapter extends RecyclerView.Adapter<UpdateDishesAdapte
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         //assign data to row/holder at a particular position
         DishModel tempModel = modelList.get(position);
-        holder.textView.setText(tempModel.getText());
 
         if (!tempModel.isSelectable()) {    // non-selectable model is a Label/group title row
             holder.textView.setTypeface(null, Typeface.BOLD);
@@ -57,15 +56,36 @@ public class UpdateDishesAdapter extends RecyclerView.Adapter<UpdateDishesAdapte
             layoutParams.setMargins(0, 30, 0, 30);
         }
 
-        // only assign image if model has an image
-        if (tempModel.hasImage()) {
-            Log.i("DishAdapt", "Found image in Dish object");
-            holder.imageView.setImageURI(tempModel.getImage());
+        if (!tempModel.isSelectable()) {    // non-selectable model is a Label/group title row
+            Log.i("DishAdpt","Setting as non-selectable: " + tempModel.getText());
+            holder.textView.setTypeface(null, Typeface.BOLD);
+            holder.textView.setTextSize(25);
+            holder.imageView.setVisibility(View.GONE);
+
+            // setting larger layout margins
+            ViewGroup.MarginLayoutParams layoutParams =
+                    (ViewGroup.MarginLayoutParams) holder.textView.getLayoutParams();
+            layoutParams.setMargins(0, 30, 0, 30);
         }
         else {
-            holder.imageView.setVisibility(View.GONE);
-            Log.i("DishAdapt", "No image found in Dish object");
+            holder.textView.setTypeface(null, Typeface.NORMAL);
+            holder.textView.setTextSize(14);
+
+            // only assign image if model has an image
+            if (tempModel.hasImage()) {
+                Log.i("DishAdapt", "Found image in Dish object: " +
+                        tempModel.getText());
+                holder.imageView.setVisibility(View.VISIBLE);
+                holder.imageView.setImageURI(tempModel.getImage());
+            }
+            else {
+                holder.imageView.setVisibility(View.GONE);
+                Log.i("DishAdapt", "No image found in Dish object: " +
+                        tempModel.getText());
+            }
         }
+
+        holder.textView.setText(tempModel.getText());
 
         // ------------ select only one logic ------------
 

@@ -310,7 +310,7 @@ public class OrdersFragment extends Fragment {
         binding.recyclerUpdateOrders.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
 
         // inflate dishes recycler
-        NormalAdapter normalAdapter = new NormalAdapter(sortDishesList());
+        DishesAdapter normalAdapter = new DishesAdapter(sortDishModelList());
         binding.recyclerUpdateDishes.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerUpdateDishes.setAdapter(normalAdapter);
         binding.recyclerUpdateDishes.addItemDecoration(new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL));
@@ -341,13 +341,15 @@ public class OrdersFragment extends Fragment {
             for (int i=0; i <selectedRow.indexOf(","); i++) {
                 idStr += selectedRow.charAt(i);
             }
+            int id = Integer.parseInt(idStr);
 
             // use ID to push unpolished order from db into new order object
-            String orderDbRecord = orderDbManager.retrieveOrder(Integer.parseInt(idStr));
+            String orderDbRecord = orderDbManager.retrieveOrder(id);
             Order selectedOrder = new Order(orderDbRecord);
 
             // set the field of the update form to reflect the properties of the dish object
-            setUpdateFormFields(selectedOrder);
+            // dishesAdapter is passed to set the selected dishes on the dish recycler
+            setUpdateFormFields(selectedOrder, normalAdapter, id);
         });
 
         // handling to processing of the form
@@ -390,7 +392,7 @@ public class OrdersFragment extends Fragment {
         });
     }
 
-    private void setUpdateFormFields(Order selectedOrder) {
+    private void setUpdateFormFields(Order selectedOrder, DishesAdapter dishAdapter, int orderId) {
 
         // selecting of dining option
         switch (selectedOrder.getDiningOption()) {
@@ -404,10 +406,15 @@ public class OrdersFragment extends Fragment {
                 break;
         }
 
+        // setting of update price field
         binding.editUpdatePrice.setText(Double.toString(selectedOrder.getPrice()));
+
+        // setting of selected dishes in the recycler view
+        int[] selectedDishIds = orderDbManager.retrieveDishIdsInOrder(orderId);
+        dishAdapter.setSelectedFromIdArray(selectedDishIds);
     }
 
-    private boolean validateUpdateData(NormalAdapter dishView, UpdateAdapter orderView) {
+    private boolean validateUpdateData(DishesAdapter dishView, UpdateAdapter orderView) {
         // check for empty fields
         if (!orderView.hasSelected()) {
             binding.textUpdateErrorResponse.setText("No order selected!");
@@ -441,7 +448,7 @@ public class OrdersFragment extends Fragment {
         return true;
     }
 
-    private Order collectUpdateData(NormalAdapter dishView, int orderId) {
+    private Order collectUpdateData(DishesAdapter dishView, int orderId) {
         // collecting edit text data
         String tableNumberStr = binding.editUpdateTableNumber.getText().toString();
 

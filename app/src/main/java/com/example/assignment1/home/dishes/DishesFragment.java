@@ -23,6 +23,7 @@ import android.widget.RadioButton;
 import com.example.assignment1.R;
 import com.example.assignment1.databinding.FragmentDishesBinding;
 import com.example.assignment1.databinding.FragmentHomeBinding;
+import com.example.assignment1.home.HomeScreen;
 import com.example.assignment1.home.Model;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ public class DishesFragment extends Fragment {
     private FragmentDishesBinding binding;
     private DishDatabaseManager databaseManager;
     private Uri createdUri;
+    Bundle newBundle, oldBundle;
 
     public DishesFragment() {
         // Required empty public constructor
@@ -47,24 +49,39 @@ public class DishesFragment extends Fragment {
         binding = FragmentDishesBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
 
-        // injecting context of associated activity into database manager
-        // requireContext(): throws except if no activity is attached to fragment - safe handling
-        databaseManager = new DishDatabaseManager(requireContext());
+        // extracting and setting of bundle argument
+        oldBundle = this.getArguments();
+        String username = oldBundle.getString("Username");
+        int accessLevel = oldBundle.getInt("AccessLevel");
 
-        // initialize the data in recycler view
-        retrieveDishes();
+        // make a new bundle to handle fragment reloads
+        newBundle = new Bundle();
+        newBundle.putInt("AccessLevel", accessLevel);
+        newBundle.putString("Username", username);
 
-        // add dish Form button handling
-        binding.buttonAdd.setOnClickListener(v->{
-            addDishForm();
-        });
+        if (accessLevel == 2) { // non-admin level access
+            binding.formAccessDenied.setVisibility(View.VISIBLE);
+        }
+        else {
+            // injecting context of associated activity into database manager
+            // requireContext(): throws except if no activity is attached to fragment - safe handling
+            databaseManager = new DishDatabaseManager(requireContext());
 
-        // show update Form button handling
-        binding.buttonShowUpdate.setOnClickListener(v->{
-            updateForm();
-        });
+            // initialize the data in recycler view
+            retrieveDishes();
 
-        handleCloseButtons();
+            // add dish Form button handling
+            binding.buttonAdd.setOnClickListener(v -> {
+                addDishForm();
+            });
+
+            // show update Form button handling
+            binding.buttonShowUpdate.setOnClickListener(v -> {
+                updateForm();
+            });
+
+            handleCloseButtons();
+        }
 
         // Inflate the layout for this fragment
         return binding.getRoot();
@@ -199,6 +216,7 @@ public class DishesFragment extends Fragment {
             );
             createdUri = uri;
             binding.imageView.setImageURI(uri);
+            binding.imageUpdateView.setImageURI(uri);
         }
     }
 
@@ -232,8 +250,7 @@ public class DishesFragment extends Fragment {
 
         // image browsing listener
         binding.buttonImageUpdate.setOnClickListener(v->{
-            // clear the current image view
-            binding.imageUpdateView.setImageResource(0);
+            // clear the current image view and global uri
 
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
@@ -271,11 +288,14 @@ public class DishesFragment extends Fragment {
 
         binding.buttonSelectedUpdateDish.setOnClickListener(v->{
 
+            Log.i("DishFrag", "Heard the update button get pressed");
+
             // get selected row string
             String selectedRow = updateAdapter.getSelected().toString();
 
             // extract all variables from form
-            Dish selectedDish = new Dish(selectedRow);      // lazy way to get dishID
+            //Dish selectedDish = new Dish(selectedRow);      // lazy way to get dishID
+            int dishId = getIdFromDbLine(selectedRow);
             String dishName = binding.editUpdateDishName.getText().toString();
             int selectedDishTypeId = binding.radioUpdateDishType.getCheckedRadioButtonId();
             String ingredients = binding.editUpdateIndgredients.getText().toString();
@@ -290,8 +310,8 @@ public class DishesFragment extends Fragment {
             }
 
             // error check variables
-            if (dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
-                binding.textAddErrorResponse.setText("One or more fields are empty");
+            if (dishId == -1 || dishName.isEmpty() || selectedDishTypeId == -1 || ingredients.isEmpty() || priceStr.isEmpty()) {
+                binding.textUpdateErrorResponse.setText("One or more fields are empty");
                 return;
             }
             try {
@@ -309,7 +329,11 @@ public class DishesFragment extends Fragment {
             // commas are used by SQL to divide columns/fields
             ingredients = ingredients.replace(',', '|');
 
-            Dish newDish = new Dish(selectedDish.getDishID(), dishName, dishType, ingredients, price, imageUri);
+            Dish newDish = new Dish(dishId, dishName, dishType, ingredients, price, imageUri);
+            Log.i("DishFrag", "Updating dish:\n" +
+                                "Dish ID: " + newDish.getDishID() + "\n" +
+                                "Dish Name: " + newDish.getDishName() + "\n" +
+                                "Dish DishThype: " + newDish.getDishType());
             databaseManager.updateRow(newDish);
             reloadFragment();
         });
@@ -467,14 +491,21 @@ public class DishesFragment extends Fragment {
         idStr = idStr.replaceAll("\\s+", "");
         Log.i("DishFrag", "Extracted ID: '" + idStr + "'");
 
+        if (idStr.equals("")) {     // case where no id is selected
+            return -1;
+        }
+
         return Integer.parseInt(idStr);
     }
 
     private void reloadFragment() {
         FragmentManager fm = requireActivity().getSupportFragmentManager();
 
+        DishesFragment reloadedFragment = new DishesFragment();
+        reloadedFragment.setArguments(newBundle);
+
         fm.beginTransaction()
-                .replace(R.id.frameLayout, new DishesFragment())
+                .replace(R.id.frameLayout, reloadedFragment)
                 .addToBackStack(null) // optional
                 .commit();
     }
@@ -520,10 +551,11 @@ public class DishesFragment extends Fragment {
 
     private void setUpdateFormFields(Dish dish) {
 
-        binding.editUpdateDishName.setText(dish.getDishName());
+        String dishName = dish.getDishName();
+        dishName = dishName.trim();
+        binding.editUpdateDishName.setText(dishName);
 
         Log.d("DEBUG", "dish type = '" + dish.getDishType() + "'");
-
 
         switch (dish.getDishType()) {
             case " Entry":
@@ -536,8 +568,10 @@ public class DishesFragment extends Fragment {
                 binding.radioUpdateDishType.check(R.id.radioUpdateDrink);
                 break;
         }
+        String ingredients = dish.getIngredients();
+        ingredients = ingredients.trim();
 
-        binding.editUpdateIndgredients.setText(dish.getIngredients());
+        binding.editUpdateIndgredients.setText(ingredients);
         binding.editUpdatePrice.setText(Double.toString(dish.getPrice()));
 
         if (!dish.getImage().isEmpty()) {

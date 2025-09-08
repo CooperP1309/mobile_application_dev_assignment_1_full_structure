@@ -4,6 +4,7 @@ xmlns:app="http://schemas.android.com/apk/res-auto"
 xmlns:tools="http://schemas.android.com/tools"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
+android:background="@drawable/ordersbackground"
 tools:context=".home.orders.OrdersFragment">
 
     <LinearLayout
@@ -30,13 +31,15 @@ tools:context=".home.orders.OrdersFragment">
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone">
+            >
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
                 <Button
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:textColor="@color/cardview_dark_background"
                     android:id="@+id/buttonCreateForm"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -48,6 +51,8 @@ tools:context=".home.orders.OrdersFragment">
 
                 <Button
                     android:id="@+id/buttonUpdateForm"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:textColor="@color/cardview_dark_background"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -76,6 +81,8 @@ tools:context=".home.orders.OrdersFragment">
 
             <Button
                 android:id="@+id/buttonDeleteOrder"
+                style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                android:textColor="@color/red"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
@@ -90,9 +97,10 @@ tools:context=".home.orders.OrdersFragment">
         <!--               CREATE FORM               -->
         <LinearLayout
             android:id="@+id/formCreate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="800dp"
+            android:layout_height="800dp"
             android:orientation="vertical"
+            android:background="#FFF"
             android:visibility="gone">
 
             <LinearLayout
@@ -212,10 +220,11 @@ tools:context=".home.orders.OrdersFragment">
         <!--               UPDATE FORM               -->
         <LinearLayout
             android:id="@+id/formUpdate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="800dp"
+            android:layout_height="800dp"
             android:orientation="vertical"
-            >
+            android:background="#FFF"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -244,7 +253,7 @@ tools:context=".home.orders.OrdersFragment">
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerUpdateOrders"
                 android:layout_width="300dp"
-                android:layout_height="120dp"
+                android:layout_height="100dp"
                 android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp" />
 
@@ -253,6 +262,8 @@ tools:context=".home.orders.OrdersFragment">
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
                 <Button
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:textColor="@color/red"
                     android:id="@+id/buttonDeleteUpdate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -275,27 +286,28 @@ tools:context=".home.orders.OrdersFragment">
 
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
-                android:layout_marginTop="25dp"
-                android:text="Dining Option"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
             <RadioGroup
                 android:id="@+id/radioUpdateDiningOption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="80dp"
+                android:layout_marginStart="0dp"
                 android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="36dp"
+                    android:layout_marginTop="20dp"
+                    android:text="Dining Option"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <RadioButton
                     android:id="@+id/radioUpdateDineIn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="26dp"
                     android:layout_marginTop="20dp"
                     android:text="Dine In" />
 
@@ -311,7 +323,7 @@ tools:context=".home.orders.OrdersFragment">
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerUpdateDishes"
                 android:layout_width="300dp"
-                android:layout_height="120dp"
+                android:layout_height="180dp"
                 android:layout_marginStart="25dp"
                 android:layout_marginTop="25dp" />
 
@@ -327,6 +339,8 @@ tools:context=".home.orders.OrdersFragment">
 
             <Button
                 android:id="@+id/buttonUpdateOrder"
+                style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                android:textColor="@color/cardview_dark_background"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="80dp"

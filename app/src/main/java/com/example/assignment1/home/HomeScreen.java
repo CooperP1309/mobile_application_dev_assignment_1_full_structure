@@ -63,7 +63,7 @@ public class HomeScreen extends AppCompatActivity {
         fragmentSwitch();
     }
 
-    private void setFragment(Fragment fragment) {
+    public void setFragment(Fragment fragment) {
         FragmentManager fragmentManager = getSupportFragmentManager();
 
         // opening of new fragment operations from current fragment manager

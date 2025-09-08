@@ -92,19 +92,6 @@ public class OrdersDatabaseManager {
             cursor.moveToNext();
         }
 
-        /* WITH TIME INCLUDED IMPLEMENTATION
-        // while not past the last record in the table
-        while (cursor.isAfterLast() == false) {
-
-            // append retrieved record details to result string
-            tablerows = tablerows + cursor.getInt(0) + ". " + cursor.getString(1)
-                    + ", " + cursor.getInt(2) + ", " + cursor.getString(3)
-                    + ", " + cursor.getDouble(4) + ", " + cursor.getString(5) + "\n";
-
-            // iterate to next cursor
-            cursor.moveToNext();
-        }*/
-
         // closing of cursor
         if (cursor != null && !cursor.isClosed()) {
             cursor.close();
@@ -191,7 +178,7 @@ public class OrdersDatabaseManager {
 
         // actual querying of the db
         Cursor cursor = db.query(DB_TABLE, null, "OrderID = ?", selectedDish, null, null, null);
-        Log.i("DishDB", "Searched with ID: " + selectedDish[0]);
+        Log.i("OrderDB", "Searched with ID: " + selectedDish[0]);
 
         cursor.moveToFirst();
 
@@ -208,6 +195,44 @@ public class OrdersDatabaseManager {
         close();
 
         return retrievedOrder;
+    }
+
+    public int[] retrieveDishIdsInOrder(Integer orderId) {
+
+        openReadable();
+
+        // preparing selected dish ID for correct type use in SQL statement
+        String[] selectedOrder = {orderId.toString()};
+
+        // actual querying of the db
+        Cursor cursor = db.query(DB_TABLE, null, "OrderID = ?", selectedOrder, null, null, null);
+        Log.i("DishDB", "Searched with ID: " + selectedOrder[0]);
+
+        cursor.moveToFirst();
+
+        // get dish Ids and split into a manageable list
+        String dishIdsStr = cursor.getString(3);
+        String[] dishIdsStrList = dishIdsStr.split(" \\| ");
+
+        // closing of cursor
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        close();
+
+        // finally, convert each id in array to an actual int
+        int numberOfIds = dishIdsStrList.length;
+        int[] dishIds = new int[numberOfIds];
+        Log.i("OrderDb","Recieved the following dish IDs:");
+
+        for (int i=0; i<numberOfIds;i++) {
+            dishIdsStrList[i] = dishIdsStrList[i].trim();   // removal of lead/trail white spaces for safety
+            dishIds[i] = Integer.parseInt(dishIdsStrList[i]);
+            Log.i("OrderDb","Recieved the following dish IDs:" + dishIds[i]);
+        }
+
+        return dishIds;
     }
 
     public class SQLHelper extends SQLiteOpenHelper {
